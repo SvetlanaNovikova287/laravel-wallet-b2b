@@ -42,10 +42,10 @@ final class TransactionService implements TransactionServiceInterface
         assert(in_array($type, [Transaction::TYPE_DEPOSIT, Transaction::TYPE_WITHDRAW, Transaction::TYPE_DEPOSIT_ADMIN], true));
 
         switch ($type) {
-            case Transaction::TYPE_DEPOSIT: $dto = $this->prepareService->deposit($wallet, (string) $amount, $meta, $confirmed);
-            case Transaction::TYPE_WITHDRAW: $dto = $this->prepareService->withdraw($wallet, (string) $amount, $meta, $confirmed);
-            case Transaction::TYPE_DEPOSIT_ADMIN: $dto = $this->prepareService->deposit_admin($wallet, (string) $amount, $meta, $confirmed);
-            case Transaction::TYPE_DEPOSIT_PRODUCT: $dto = $this->prepareService->deposit_product($wallet, (string) $amount, $meta, $confirmed);
+            case Transaction::TYPE_DEPOSIT: $dto = $this->prepareService->deposit($wallet, (string) $amount, $meta, $confirmed); break;
+            case Transaction::TYPE_WITHDRAW: $dto = $this->prepareService->withdraw($wallet, (string) $amount, $meta, $confirmed); break;
+            case Transaction::TYPE_DEPOSIT_ADMIN: $dto = $this->prepareService->deposit_admin($wallet, (string) $amount, $meta, $confirmed); break;
+            case Transaction::TYPE_DEPOSIT_PRODUCT: $dto = $this->prepareService->deposit_product($wallet, (string) $amount, $meta, $confirmed); break;
         }
 
         $transactions = $this->apply([
