@@ -7,20 +7,25 @@ namespace Bavix\Wallet\Test\Infra\Factories;
 use Bavix\Wallet\Test\Infra\Models\UserMulti;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<UserMulti>
- */
-final class UserMultiFactory extends Factory
+class UserMultiFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = UserMulti::class;
 
+    /**
+     * Define the model's default state.
+     *
+     * @throws
+     */
     public function definition(): array
     {
         return [
-            'name' => fake()
-                ->name,
-            'email' => fake()
-                ->unique()
+            'name' => $this->faker->name,
+            'email' => $this->faker->unique()
                 ->safeEmail,
         ];
     }

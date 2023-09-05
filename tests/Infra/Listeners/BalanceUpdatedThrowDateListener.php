@@ -10,7 +10,7 @@ use DateTimeInterface;
 
 final class BalanceUpdatedThrowDateListener
 {
-    public function handle(BalanceUpdatedEventInterface $balanceChangedEvent): never
+    public function handle(BalanceUpdatedEventInterface $balanceChangedEvent): void
     {
         throw new UnknownEventException(
             $balanceChangedEvent->getUpdatedAt()

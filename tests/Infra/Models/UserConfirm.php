@@ -11,18 +11,18 @@ use Bavix\Wallet\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * Class UserConfirm.
+ *
  * @property string $name
  * @property string $email
- *
- * @method int getKey()
  */
-final class UserConfirm extends Model implements Wallet, Confirmable
+class UserConfirm extends Model implements Wallet, Confirmable
 {
     use HasWallet;
     use CanConfirm;
 
     /**
-     * @var string[]
+     * @var array
      */
     protected $fillable = ['name', 'email'];
 

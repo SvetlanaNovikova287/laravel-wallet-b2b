@@ -4,14 +4,11 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Test\Units\Domain;
 
-use Bavix\Wallet\External\Dto\Extra;
 use Bavix\Wallet\Models\Transfer;
 use Bavix\Wallet\Services\ExchangeService;
 use Bavix\Wallet\Services\ExchangeServiceInterface;
-use Bavix\Wallet\Services\RegulatorServiceInterface;
 use Bavix\Wallet\Test\Infra\Factories\UserMultiFactory;
 use Bavix\Wallet\Test\Infra\Models\UserMulti;
-use Bavix\Wallet\Test\Infra\Services\ExchangeUsdToBtcService;
 use Bavix\Wallet\Test\Infra\TestCase;
 use Illuminate\Support\Str;
 
@@ -98,7 +95,7 @@ final class ExchangeTest extends TestCase
         ]);
         self::assertSame($usd->slug, 'my-usd');
         self::assertSame($usd->currency, 'USD');
-        self::assertSame($usd->holder_id, $user->getKey());
+        self::assertSame($usd->holder_id, $user->id);
         self::assertInstanceOf($usd->holder_type, $user);
 
         $rub = $user->createWallet([
@@ -106,7 +103,7 @@ final class ExchangeTest extends TestCase
         ]);
         self::assertSame($rub->slug, 'rub');
         self::assertSame($rub->currency, 'RUB');
-        self::assertSame($rub->holder_id, $user->getKey());
+        self::assertSame($rub->holder_id, $user->id);
         self::assertInstanceOf($rub->holder_type, $user);
 
         $superWallet = $user->createWallet([
@@ -114,7 +111,7 @@ final class ExchangeTest extends TestCase
         ]);
         self::assertSame($superWallet->slug, Str::slug('Super Wallet'));
         self::assertSame($superWallet->currency, Str::upper(Str::slug('Super Wallet')));
-        self::assertSame($superWallet->holder_id, $user->getKey());
+        self::assertSame($superWallet->holder_id, $user->id);
         self::assertInstanceOf($superWallet->holder_type, $user);
 
         $rate = app(ExchangeServiceInterface::class)
@@ -137,59 +134,5 @@ final class ExchangeTest extends TestCase
         ;
 
         self::assertSame(1 / 67.61, (float) $rate);
-    }
-
-    public function testExchangeUsdToBtc(): void
-    {
-        app()->bind(ExchangeServiceInterface::class, ExchangeUsdToBtcService::class);
-
-        $rate = (float) app(ExchangeServiceInterface::class)
-            ->convertTo('USD', 'BTC', 1)
-        ;
-
-        self::assertSame(0.004636, $rate);
-
-        /** @var UserMulti $user */
-        $user = UserMultiFactory::new()->create();
-        $usd = $user->createWallet([
-            'name' => 'Dollar USA',
-            'slug' => 'my-usd',
-            'decimal_places' => 8,
-            'meta' => [
-                'currency' => 'USD',
-            ],
-        ]);
-        $btc = $user->createWallet([
-            'name' => 'Bitcoin',
-            'slug' => 'my-btc',
-            'decimal_places' => 8,
-            'meta' => [
-                'currency' => 'BTC',
-            ],
-        ]);
-
-        $usd->depositFloat(100.);
-        self::assertSame(100., $usd->balanceFloatNum);
-        self::assertSame(10000000000, $usd->balanceInt);
-
-        $usd->exchange($btc, 10000000000, new Extra(
-            deposit: [
-                'amountFloat' => 100 * $rate,
-            ],
-            withdraw: [
-                'amountFloat' => -100.,
-            ],
-        ));
-
-        $regulatorService = app(RegulatorServiceInterface::class);
-        $regulatorService->forget($usd);
-        $regulatorService->forget($btc);
-
-        // get data from database
-        $usd->refresh();
-        $btc->refresh();
-
-        self::assertSame(0, $usd->balanceInt);
-        self::assertSame(100 * $rate, $btc->balanceFloatNum);
     }
 }

@@ -17,7 +17,6 @@ interface TransferLazyDtoAssemblerInterface
         string $fee,
         TransactionDtoInterface $withdrawDto,
         TransactionDtoInterface $depositDto,
-        string $status,
-        ?string $uuid
+        string $status
     ): TransferLazyDtoInterface;
 }

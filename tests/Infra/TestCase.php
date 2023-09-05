@@ -7,7 +7,6 @@ namespace Bavix\Wallet\Test\Infra;
 use Bavix\Wallet\Test\Infra\PackageModels\Transaction;
 use Bavix\Wallet\Test\Infra\PackageModels\Transfer;
 use Bavix\Wallet\Test\Infra\PackageModels\Wallet;
-use Bavix\Wallet\Test\Infra\Services\MyExchangeService;
 use Bavix\Wallet\WalletServiceProvider;
 use Illuminate\Config\Repository;
 use Illuminate\Foundation\Application;
@@ -28,10 +27,8 @@ abstract class TestCase extends OrchestraTestCase
         DB::transactionLevel() && DB::rollBack();
     }
 
-    final public function expectExceptionMessageStrict(mixed $message): void
+    public function expectExceptionMessageStrict(string $message): void
     {
-        assert(is_string($message));
-
         $this->expectExceptionMessageMatches("~^{$message}$~");
     }
 
@@ -40,7 +37,7 @@ abstract class TestCase extends OrchestraTestCase
      *
      * @return non-empty-array<int, string>
      */
-    final protected function getPackageProviders($app): array
+    protected function getPackageProviders($app): array
     {
         // Bind eloquent models to IoC container
         $app['config']->set('wallet.services.exchange', MyExchangeService::class);
@@ -54,7 +51,7 @@ abstract class TestCase extends OrchestraTestCase
     /**
      * @param Application $app
      */
-    final protected function getEnvironmentSetUp($app): void
+    protected function getEnvironmentSetUp($app): void
     {
         /** @var Repository $config */
         $config = $app['config'];
@@ -64,7 +61,6 @@ abstract class TestCase extends OrchestraTestCase
         $config->set('database.connections.pgsql.prefix', 'tests');
         $config->set('database.connections.mysql.prefix', 'tests');
 
-        /** @var array<string, mixed> $mysql */
         $mysql = $config->get('database.connections.mysql');
         $config->set('database.connections.mariadb', array_merge($mysql, [
             'port' => 3307,

@@ -13,9 +13,9 @@ use Bavix\Wallet\Models\Transaction;
 final class TransactionRepository implements TransactionRepositoryInterface
 {
     public function __construct(
-        private readonly TransactionDtoTransformerInterface $transformer,
-        private readonly JsonServiceInterface $jsonService,
-        private readonly Transaction $transaction
+        private TransactionDtoTransformerInterface $transformer,
+        private JsonServiceInterface $jsonService,
+        private Transaction $transaction
     ) {
     }
 

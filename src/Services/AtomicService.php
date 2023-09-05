@@ -6,6 +6,7 @@ namespace Bavix\Wallet\Services;
 
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
 use Bavix\Wallet\Internal\Service\DatabaseServiceInterface;
 use Bavix\Wallet\Internal\Service\LockServiceInterface;
@@ -18,17 +19,18 @@ use Illuminate\Database\RecordsNotFoundException;
 final class AtomicService implements AtomicServiceInterface
 {
     public function __construct(
-        private readonly BookkeeperServiceInterface $bookkeeperService,
-        private readonly DatabaseServiceInterface $databaseService,
-        private readonly StateServiceInterface $stateService,
-        private readonly LockServiceInterface $lockService,
-        private readonly CastServiceInterface $castService
+        private BookkeeperServiceInterface $bookkeeperService,
+        private DatabaseServiceInterface $databaseService,
+        private StateServiceInterface $stateService,
+        private LockServiceInterface $lockService,
+        private CastServiceInterface $castService
     ) {
     }
 
     /**
      * @param non-empty-array<Wallet> $objects
      *
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -67,6 +69,7 @@ final class AtomicService implements AtomicServiceInterface
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface

@@ -15,21 +15,17 @@ use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Models\Transfer;
 use Bavix\Wallet\Services\BookkeeperServiceInterface;
 use Bavix\Wallet\Services\RegulatorServiceInterface;
-use Bavix\Wallet\Test\Infra\Exceptions\PriceNotSetException;
 use Bavix\Wallet\Test\Infra\Factories\ItemFactory;
-use Bavix\Wallet\Test\Infra\Factories\ItemMultiPriceFactory;
 use Bavix\Wallet\Test\Infra\Factories\UserCashierFactory;
 use Bavix\Wallet\Test\Infra\Factories\UserMultiFactory;
-use Bavix\Wallet\Test\Infra\Helpers\Config;
 use Bavix\Wallet\Test\Infra\Models\Item;
-use Bavix\Wallet\Test\Infra\Models\ItemMultiPrice;
 use Bavix\Wallet\Test\Infra\Models\UserCashier;
 use Bavix\Wallet\Test\Infra\Models\UserMulti;
 use Bavix\Wallet\Test\Infra\PackageModels\Wallet;
 use Bavix\Wallet\Test\Infra\TestCase;
 use Illuminate\Database\QueryException;
-use Throwable;
 use function range;
+use Throwable;
 
 /**
  * @internal
@@ -38,7 +34,7 @@ final class MultiWalletTest extends TestCase
 {
     public function testCreateDefault(): void
     {
-        $slug = Config::string('wallet.wallet.default.slug', 'default');
+        $slug = config('wallet.wallet.default.slug', 'default');
 
         /** @var UserMulti $user */
         $user = UserMultiFactory::new()->create();
@@ -50,7 +46,7 @@ final class MultiWalletTest extends TestCase
         ]);
         self::assertNotNull($wallet);
         self::assertNotNull($user->wallet);
-        self::assertSame($user->wallet->getKey(), $wallet->getKey());
+        self::assertSame($user->wallet->id, $wallet->id);
     }
 
     public function testOnlyCreatedWallets(): void
@@ -122,7 +118,7 @@ final class MultiWalletTest extends TestCase
 
         // is equal
         self::assertTrue($transaction->wallet->is($user->getWallet('deposit')));
-        self::assertTrue($user->getWallet('deposit')?->is($wallet));
+        self::assertTrue($user->getWallet('deposit')->is($wallet));
         self::assertTrue($wallet->is($user->getWallet('deposit')));
 
         $wallet->withdrawFloat($wallet->balanceFloat);
@@ -131,11 +127,14 @@ final class MultiWalletTest extends TestCase
 
     public function testDepositFloat(): void
     {
-        /** @var UserMulti $userInit */
+        /**
+         * @var UserMulti $userInit
+         * @var UserMulti $userFind
+         */
         $userInit = UserMultiFactory::new()->create();
         $wallet = $userInit->createWallet([
             'name' => 'my-simple-wallet',
-            'slug' => (string) $userInit->getKey(),
+            'slug' => $userInit->getKey(),
         ]);
 
         // without find
@@ -147,12 +146,12 @@ final class MultiWalletTest extends TestCase
         $wallet->withdrawFloat($wallet->balanceFloat);
         self::assertSame(0., (float) $wallet->balanceFloat);
 
-        /** @var UserMulti $userFind */
-        $userFind = UserMulti::query()->find($userInit->getKey()); // refresh
+        // find
+        $userFind = UserMulti::query()->find($userInit->id); // refresh
         self::assertTrue($userInit->is($userFind));
         self::assertTrue($userFind->hasWallet((string) $userInit->getKey()));
 
-        $wallet = $userFind->getWalletOrFail((string) $userInit->getKey());
+        $wallet = $userFind->getWallet((string) $userInit->getKey());
         $wallet->depositFloat(100.1);
 
         self::assertSame(100.1, (float) $wallet->balanceFloat);
@@ -164,39 +163,15 @@ final class MultiWalletTest extends TestCase
 
     /**
      * @see https://github.com/bavix/laravel-wallet/issues/286#issue-750353538
-     * @see https://github.com/bavix/laravel-wallet/issues/658
      */
-    public function testGetWalletOrFailError(): void
+    public function testGetWalletOrFail(): void
     {
         /** @var UserMulti $userMulti */
         $userMulti = UserMultiFactory::new()->create();
         self::assertSame(0, $userMulti->balanceInt); // createWallet
-
-        $this->expectException(ModelNotFoundException::class);
-
         $userMulti
-            ->getWalletOrFail(Config::string('wallet.wallet.default.slug', 'default'))
+            ->getWalletOrFail(config('wallet.wallet.default.slug', 'default'))
         ;
-    }
-
-    /**
-     * @see https://github.com/bavix/laravel-wallet/issues/286#issue-750353538
-     * @see https://github.com/bavix/laravel-wallet/issues/658
-     */
-    public function testGetWalletOrFailSuccess(): void
-    {
-        /** @var UserMulti $userMulti */
-        $userMulti = UserMultiFactory::new()->create();
-        self::assertSame(0, $userMulti->balanceInt); // createWallet
-        $uuid = $userMulti->wallet->uuid;
-
-        $userMulti->deposit(1);
-
-        $walletResult = $userMulti
-            ->getWalletOrFail(Config::string('wallet.wallet.default.slug', 'default'))
-        ;
-
-        self::assertSame($uuid, $walletResult->uuid);
     }
 
     /**
@@ -210,7 +185,7 @@ final class MultiWalletTest extends TestCase
         /** @var UserMulti $userMulti */
         $userMulti = UserMultiFactory::new()->create();
         $userMulti
-            ->getWalletOrFail(Config::string('wallet.wallet.default.slug', 'default'))
+            ->getWalletOrFail(config('wallet.wallet.default.slug', 'default'))
         ;
     }
 
@@ -314,8 +289,8 @@ final class MultiWalletTest extends TestCase
             'name' => 'deposit',
         ]);
 
-        self::assertNotSame($first->getKey(), $second->getKey());
-        self::assertNotSame($firstWallet->getKey(), $secondWallet->getKey());
+        self::assertNotSame($first->id, $second->id);
+        self::assertNotSame($firstWallet->id, $secondWallet->id);
         self::assertSame(0, $firstWallet->balanceInt);
         self::assertSame(0, $secondWallet->balanceInt);
 
@@ -416,6 +391,9 @@ final class MultiWalletTest extends TestCase
         self::assertSame($wallet->balanceInt, 0);
     }
 
+    /**
+     * @throws
+     */
     public function testWalletUnique(): void
     {
         $this->expectException(QueryException::class);
@@ -441,7 +419,7 @@ final class MultiWalletTest extends TestCase
             'slug' => 'test',
         ]);
 
-        $secondWallet = $user->getWalletOrFail('test');
+        $secondWallet = $user->getWallet('test');
         self::assertSame($secondWallet->getKey(), $firstWallet->getKey());
 
         $uuid = app(UuidFactoryServiceInterface::class)->uuid4();
@@ -454,7 +432,7 @@ final class MultiWalletTest extends TestCase
 
         self::assertNotNull($test2->refresh());
         self::assertSame($uuid, $test2->uuid);
-        self::assertSame($test2->getKey(), $user->getWallet('test2')?->getKey());
+        self::assertSame($test2->getKey(), $user->getWallet('test2')->getKey());
 
         self::assertNotNull($user->wallets()->where('uuid', $uuid)->first());
 
@@ -478,7 +456,7 @@ final class MultiWalletTest extends TestCase
         $ids = [];
         $uuids = [];
         foreach ($names as $name) {
-            $wallet = $user->getWalletOrFail($name);
+            $wallet = $user->getWallet($name);
             self::assertSame($name, $wallet->name);
             $uuids[] = $wallet->uuid;
             $ids[] = $wallet->getKey();
@@ -490,7 +468,10 @@ final class MultiWalletTest extends TestCase
 
     public function testPay(): void
     {
-        /** @var UserMulti $user */
+        /**
+         * @var UserMulti $user
+         * @var Item      $product
+         */
         $user = UserMultiFactory::new()->create();
         $a = $user->createWallet([
             'name' => 'a',
@@ -499,13 +480,12 @@ final class MultiWalletTest extends TestCase
             'name' => 'b',
         ]);
 
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
 
-        self::assertSame(0, $a->balanceInt);
-        self::assertSame(0, $b->balanceInt);
+        self::assertSame($a->balanceInt, 0);
+        self::assertSame($b->balanceInt, 0);
 
         $a->deposit($product->getAmountProduct($a));
         self::assertSame($a->balanceInt, $product->getAmountProduct($a));
@@ -515,26 +495,24 @@ final class MultiWalletTest extends TestCase
 
         $transfer = $a->pay($product);
         $paidTransfer = $a->paid($product);
-        self::assertNotNull($paidTransfer);
         self::assertTrue((bool) $paidTransfer);
         self::assertSame($transfer->getKey(), $paidTransfer->getKey());
         self::assertInstanceOf(UserMulti::class, $paidTransfer->withdraw->payable);
         self::assertSame($user->getKey(), $paidTransfer->withdraw->payable->getKey());
-        self::assertSame($transfer->from->getKey(), $a->getKey());
-        self::assertSame($transfer->to->getKey(), $product->wallet->getKey());
+        self::assertSame($transfer->from->id, $a->id);
+        self::assertSame($transfer->to->id, $product->wallet->id);
         self::assertSame($transfer->status, Transfer::STATUS_PAID);
         self::assertSame($a->balanceInt, 0);
         self::assertSame($product->balanceInt, $product->getAmountProduct($a));
 
         $transfer = $b->pay($product);
         $paidTransfer = $b->paid($product);
-        self::assertNotNull($paidTransfer);
         self::assertTrue((bool) $paidTransfer);
         self::assertSame($transfer->getKey(), $paidTransfer->getKey());
         self::assertInstanceOf(UserMulti::class, $paidTransfer->withdraw->payable);
         self::assertSame($user->getKey(), $paidTransfer->withdraw->payable->getKey());
-        self::assertSame($transfer->from->getKey(), $b->getKey());
-        self::assertSame($transfer->to->getKey(), $product->wallet->getKey());
+        self::assertSame($transfer->from->id, $b->id);
+        self::assertSame($transfer->to->id, $product->wallet->id);
         self::assertSame($transfer->status, Transfer::STATUS_PAID);
         self::assertSame($b->balanceInt, 0);
         self::assertSame($product->balanceInt, $product->getAmountProduct($b) * 2);
@@ -546,65 +524,6 @@ final class MultiWalletTest extends TestCase
         self::assertTrue($b->refund($product));
         self::assertSame($product->balanceInt, 0);
         self::assertSame($b->balanceInt, $product->getAmountProduct($b));
-    }
-
-    public function testPayItemMultiPrice(): void
-    {
-        /** @var UserMulti $user */
-        $user = UserMultiFactory::new()->create();
-
-        $usd = $user->createWallet([
-            'name' => 'Dollar USA',
-            'meta' => [
-                'currency' => 'USD',
-            ],
-        ]);
-
-        /** @var ItemMultiPrice $product */
-        $product = ItemMultiPriceFactory::new()->create([
-            'quantity' => 1,
-        ]);
-
-        self::assertSame(0, $usd->balanceInt);
-
-        $usd->deposit($product->getAmountProduct($usd));
-        self::assertSame($usd->balanceInt, $product->getAmountProduct($usd));
-
-        $transfer = $usd->pay($product);
-        $paidTransfer = $usd->paid($product);
-        self::assertNotNull($paidTransfer);
-        self::assertTrue((bool) $paidTransfer);
-        self::assertSame($transfer->getKey(), $paidTransfer->getKey());
-        self::assertInstanceOf(UserMulti::class, $paidTransfer->withdraw->payable);
-        self::assertSame($user->getKey(), $paidTransfer->withdraw->payable->getKey());
-        self::assertSame($transfer->from->getKey(), $usd->getKey());
-        self::assertSame($transfer->to->getKey(), $product->wallet->getKey());
-        self::assertSame($transfer->status, Transfer::STATUS_PAID);
-        self::assertSame($usd->balanceInt, 0);
-        self::assertSame($product->balanceInt, $product->getAmountProduct($usd));
-    }
-
-    public function testPayItemMultiPricePriceNotSetException(): void
-    {
-        $this->expectExceptionMessageStrict('Price not set for TRY currency');
-        $this->expectException(PriceNotSetException::class);
-
-        /** @var UserMulti $user */
-        $user = UserMultiFactory::new()->create();
-        $try = $user->createWallet([
-            'name' => 'Turkish lira',
-            'meta' => [
-                'currency' => 'TRY',
-            ],
-        ]);
-
-        /** @var ItemMultiPrice $product */
-        $product = ItemMultiPriceFactory::new()->create([
-            'quantity' => 1,
-        ]);
-
-        self::assertSame(0, $try->balanceInt);
-        $product->getAmountProduct($try);
     }
 
     public function testUserCashier(): void
@@ -640,7 +559,7 @@ final class MultiWalletTest extends TestCase
      */
     public function testDecimalPlaces(): void
     {
-        $slug = Config::string('wallet.wallet.default.slug', 'default');
+        $slug = config('wallet.wallet.default.slug', 'default');
 
         /** @var UserMulti $user */
         $user = UserMultiFactory::new()->create();
@@ -653,7 +572,7 @@ final class MultiWalletTest extends TestCase
         ]);
         self::assertNotNull($wallet);
         self::assertNotNull($user->wallet);
-        self::assertSame($user->wallet->getKey(), $wallet->getKey());
+        self::assertSame($user->wallet->id, $wallet->id);
 
         $user->deposit(1_000_000_000);
         self::assertSame(1000., (float) $wallet->balanceFloat);
@@ -664,7 +583,7 @@ final class MultiWalletTest extends TestCase
         /** @var UserMulti $user */
         $user = UserMultiFactory::new()->create();
 
-        /** @var array<int, Wallet> $wallets */
+        /** @var Wallet[] $wallets */
         $wallets = [];
         foreach (range(1, 10) as $item) {
             $wallets[] = $user->createWallet([

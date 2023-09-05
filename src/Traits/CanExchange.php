@@ -11,6 +11,7 @@ use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Internal\Assembler\ExtraDtoAssemblerInterface;
 use Bavix\Wallet\Internal\Assembler\TransferLazyDtoAssemblerInterface;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\RecordNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
@@ -32,6 +33,7 @@ trait CanExchange
     /**
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -56,6 +58,7 @@ trait CanExchange
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -86,14 +89,12 @@ trait CanExchange
                 $mathService->add($amount, $fee),
                 $withdrawOption->getMeta(),
                 $withdrawOption->isConfirmed(),
-                $withdrawOption->getUuid(),
             );
             $depositDto = $prepareService->deposit(
                 $to,
                 $mathService->floor($mathService->mul($amount, $rate, 1)),
                 $depositOption->getMeta(),
                 $depositOption->isConfirmed(),
-                $depositOption->getUuid(),
             );
             $transferLazyDto = app(TransferLazyDtoAssemblerInterface::class)->create(
                 $this,
@@ -103,7 +104,6 @@ trait CanExchange
                 $withdrawDto,
                 $depositDto,
                 Transfer::STATUS_EXCHANGE,
-                $extraDto->getUuid()
             );
 
             $transfers = app(TransferServiceInterface::class)->apply([$transferLazyDto]);

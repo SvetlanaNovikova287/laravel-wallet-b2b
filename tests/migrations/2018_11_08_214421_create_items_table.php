@@ -6,22 +6,27 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class() extends Migration {
-    public function up(): void
+class CreateItemsTable extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up()
     {
-        Schema::create('items', static function (Blueprint $table) {
+        Schema::create('items', function (Blueprint $table) {
             $table->increments('id');
             $table->string('name');
             $table->integer('price');
-            $table->json('prices')
-                ->nullable();
             $table->unsignedSmallInteger('quantity');
             $table->timestamps();
         });
     }
 
-    public function down(): void
+    /**
+     * Reverse the migrations.
+     */
+    public function down()
     {
         Schema::dropIfExists('items');
     }
-};
+}

@@ -6,18 +6,17 @@ namespace Bavix\Wallet\Internal\Dto;
 
 use Bavix\Wallet\Interfaces\Wallet;
 
-/** @immutable */
+/** @psalm-immutable */
 final class TransferLazyDto implements TransferLazyDtoInterface
 {
     public function __construct(
-        private readonly Wallet $fromWallet,
-        private readonly Wallet $toWallet,
-        private readonly int $discount,
-        private readonly string $fee,
-        private readonly TransactionDtoInterface $withdrawDto,
-        private readonly TransactionDtoInterface $depositDto,
-        private readonly string $status,
-        private readonly ?string $uuid
+        private Wallet $fromWallet,
+        private Wallet $toWallet,
+        private int $discount,
+        private string $fee,
+        private TransactionDtoInterface $withdrawDto,
+        private TransactionDtoInterface $depositDto,
+        private string $status
     ) {
     }
 
@@ -54,10 +53,5 @@ final class TransferLazyDto implements TransferLazyDtoInterface
     public function getStatus(): string
     {
         return $this->status;
-    }
-
-    public function getUuid(): ?string
-    {
-        return $this->uuid;
     }
 }

@@ -26,9 +26,11 @@ final class ProductTest extends TestCase
 {
     public function testPay(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -36,11 +38,15 @@ final class ProductTest extends TestCase
         self::assertSame($buyer->balanceInt, 0);
         $buyer->deposit($product->getAmountProduct($buyer));
 
-        self::assertSame($buyer->balanceInt, $product->getAmountProduct($buyer));
+        self::assertSame($buyer->balanceInt, (int) $product->getAmountProduct($buyer));
         $transfer = $buyer->pay($product);
         self::assertNotNull($transfer);
         self::assertSame($transfer->status, Transfer::STATUS_PAID);
 
+        /**
+         * @var Transaction $withdraw
+         * @var Transaction $deposit
+         */
         $withdraw = $transfer->withdraw;
         $deposit = $transfer->deposit;
 
@@ -69,9 +75,11 @@ final class ProductTest extends TestCase
 
     public function testRefund(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -79,29 +87,29 @@ final class ProductTest extends TestCase
         self::assertSame(0, $buyer->balanceInt);
         $buyer->deposit($product->getAmountProduct($buyer));
 
-        self::assertSame($product->getAmountProduct($buyer), $buyer->balanceInt);
+        self::assertSame((int) $product->getAmountProduct($buyer), $buyer->balanceInt);
         $transfer = $buyer->pay($product);
         self::assertNotNull($transfer);
         self::assertSame(Transfer::STATUS_PAID, $transfer->status);
 
         self::assertTrue($buyer->refund($product));
-        self::assertSame($product->getAmountProduct($buyer), $buyer->balanceInt);
+        self::assertSame((int) $product->getAmountProduct($buyer), $buyer->balanceInt);
         self::assertSame(0, $product->balanceInt);
 
         $transfer->refresh();
         self::assertSame(Transfer::STATUS_REFUND, $transfer->status);
 
         self::assertFalse($buyer->safeRefund($product));
-        self::assertSame($product->getAmountProduct($buyer), $buyer->balanceInt);
+        self::assertSame((int) $product->getAmountProduct($buyer), $buyer->balanceInt);
 
         $transfer = $buyer->pay($product);
         self::assertNotNull($transfer);
         self::assertSame(0, $buyer->balanceInt);
-        self::assertSame($product->getAmountProduct($buyer), $product->balanceInt);
+        self::assertSame((int) $product->getAmountProduct($buyer), $product->balanceInt);
         self::assertSame(Transfer::STATUS_PAID, $transfer->status);
 
         self::assertTrue($buyer->refund($product));
-        self::assertSame($product->getAmountProduct($buyer), $buyer->balanceInt);
+        self::assertSame((int) $product->getAmountProduct($buyer), $buyer->balanceInt);
         self::assertSame(0, $product->balanceInt);
 
         $transfer->refresh();
@@ -110,9 +118,11 @@ final class ProductTest extends TestCase
 
     public function testForceRefund(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -132,9 +142,9 @@ final class ProductTest extends TestCase
         self::assertFalse($buyer->safeRefund($product));
         self::assertTrue($buyer->forceRefund($product));
 
-        self::assertSame(-$product->getAmountProduct($buyer), $product->balanceInt);
-        self::assertSame($product->getAmountProduct($buyer), $buyer->balanceInt);
-        $product->deposit(-$product->balanceInt);
+        self::assertSame((int) -$product->getAmountProduct($buyer), $product->balanceInt);
+        self::assertSame((int) $product->getAmountProduct($buyer), $buyer->balanceInt);
+        $product->deposit(-$product->balance);
         $buyer->withdraw($buyer->balance);
 
         self::assertSame(0, $product->balanceInt);
@@ -147,9 +157,11 @@ final class ProductTest extends TestCase
         $this->expectExceptionCode(ExceptionInterface::PRODUCT_ENDED);
         $this->expectExceptionMessageStrict(trans('wallet::errors.product_stock'));
 
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -161,9 +173,11 @@ final class ProductTest extends TestCase
 
     public function testForcePay(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -171,17 +185,19 @@ final class ProductTest extends TestCase
         self::assertSame(0, $buyer->balanceInt);
         $buyer->forcePay($product);
 
-        self::assertSame(-$product->getAmountProduct($buyer), $buyer->balanceInt);
+        self::assertSame((int) -$product->getAmountProduct($buyer), $buyer->balanceInt);
 
-        $buyer->deposit(-$buyer->balanceInt);
+        $buyer->deposit(-$buyer->balance);
         self::assertSame(0, $buyer->balanceInt);
     }
 
     public function testPayFree(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -202,9 +218,11 @@ final class ProductTest extends TestCase
 
     public function testFreePay(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -230,9 +248,11 @@ final class ProductTest extends TestCase
         $this->expectExceptionCode(ExceptionInterface::PRODUCT_ENDED);
         $this->expectExceptionMessageStrict(trans('wallet::errors.product_stock'));
 
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer $buyer
+         * @var Item  $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var Item $product */
         $product = ItemFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -243,12 +263,11 @@ final class ProductTest extends TestCase
 
     public function testPayCustomPrice(): void
     {
-        /** @var Buyer $buyer */
-        $buyer = BuyerFactory::new()->create();
         /**
-         * @var Item $productIn
-         * @var Item $productOutside
+         * @var Buyer $buyer
+         * @var Item  $productIn
          */
+        $buyer = BuyerFactory::new()->create();
         [$productIn, $productOutside] = ItemFactory::times(2)->create([
             'quantity' => 2,
             'price' => 5_000,
@@ -277,12 +296,16 @@ final class ProductTest extends TestCase
 
     /**
      * @see https://github.com/bavix/laravel-wallet/issues/237
+     *
+     * @throws
      */
     public function testProductMultiWallet(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer      $buyer
+         * @var ItemWallet $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var ItemWallet $product */
         $product = ItemWalletFactory::new()->create([
             'quantity' => 1,
         ]);
@@ -296,11 +319,11 @@ final class ProductTest extends TestCase
         ]);
         app(DatabaseServiceInterface::class)->transaction(function () use ($product, $buyer) {
             $transfer = $buyer->pay($product);
-            $product->transfer($product->getWalletOrFail('testing'), $transfer->deposit->amount, $transfer->toArray());
+            $product->transfer($product->getWallet('testing'), $transfer->deposit->amount, $transfer->toArray());
         });
 
         self::assertSame(0, $product->balanceInt);
         self::assertSame(0, $buyer->balanceInt);
-        self::assertSame((string) $product->getAmountProduct($buyer), $product->getWalletOrFail('testing')->balance);
+        self::assertSame((string) $product->getAmountProduct($buyer), $product->getWallet('testing')->balance);
     }
 }

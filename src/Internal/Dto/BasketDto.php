@@ -14,8 +14,8 @@ final class BasketDto implements BasketDtoInterface
      * @param array<mixed> $meta
      */
     public function __construct(
-        private readonly array $items,
-        private readonly array $meta
+        private array $items,
+        private array $meta
     ) {
     }
 

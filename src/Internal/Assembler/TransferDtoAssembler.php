@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 final class TransferDtoAssembler implements TransferDtoAssemblerInterface
 {
     public function __construct(
-        private readonly UuidFactoryServiceInterface $uuidService
+        private UuidFactoryServiceInterface $uuidService
     ) {
     }
 
@@ -23,11 +23,10 @@ final class TransferDtoAssembler implements TransferDtoAssemblerInterface
         Model $fromModel,
         Model $toModel,
         int $discount,
-        string $fee,
-        ?string $uuid
+        string $fee
     ): TransferDtoInterface {
         return new TransferDto(
-            $uuid ?? $this->uuidService->uuid4(),
+            $this->uuidService->uuid4(),
             $depositId,
             $withdrawId,
             $status,

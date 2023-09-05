@@ -14,7 +14,7 @@ use Bavix\Wallet\Models\Transfer;
 final class PurchaseService implements PurchaseServiceInterface
 {
     public function __construct(
-        private readonly CastServiceInterface $castService
+        private CastServiceInterface $castService
     ) {
     }
 
@@ -29,7 +29,7 @@ final class PurchaseService implements PurchaseServiceInterface
         $productCounts = [];
         $query = $customer->transfers();
         foreach ($basketDto->items() as $itemDto) {
-            $wallet = $this->castService->getWallet($itemDto->getReceiving() ?? $itemDto->getProduct());
+            $wallet = $this->castService->getWallet($itemDto->getProduct());
             $wallets[$wallet->uuid] = $wallet;
 
             $productCounts[$wallet->uuid] = ($productCounts[$wallet->uuid] ?? 0) + count($itemDto);
@@ -43,6 +43,7 @@ final class PurchaseService implements PurchaseServiceInterface
              */
             $arrays[] = (clone $query)
                 ->with(['deposit', 'withdraw.wallet'])
+                ->where('to_type', $wallet->getMorphClass())
                 ->where('to_id', $wallet->getKey())
                 ->whereIn('status', $status)
                 ->orderBy('id', 'desc')

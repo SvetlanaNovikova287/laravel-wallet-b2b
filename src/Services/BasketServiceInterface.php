@@ -6,9 +6,6 @@ namespace Bavix\Wallet\Services;
 
 use Bavix\Wallet\Internal\Dto\AvailabilityDtoInterface;
 
-/**
- * @api
- */
 interface BasketServiceInterface
 {
     /**

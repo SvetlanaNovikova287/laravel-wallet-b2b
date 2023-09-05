@@ -228,8 +228,8 @@ final class ConfirmTest extends TestCase
         /** @var UserConfirm $userConfirm */
         $userConfirm = UserConfirmFactory::new()->create();
         $transaction = $userConfirm->deposit(100, null, false);
-        self::assertSame($transaction->wallet->getKey(), $userConfirm->wallet->getKey());
-        self::assertSame((int) $transaction->payable_id, (int) $userConfirm->getKey());
+        self::assertSame($transaction->wallet->id, $userConfirm->wallet->id);
+        self::assertSame((int) $transaction->payable_id, (int) $userConfirm->id);
         self::assertInstanceOf(UserConfirm::class, $transaction->payable);
         self::assertFalse($transaction->confirmed);
 
@@ -256,8 +256,8 @@ final class ConfirmTest extends TestCase
         /** @var UserConfirm $userConfirm */
         $userConfirm = UserConfirmFactory::new()->create();
         $transaction = $userConfirm->wallet->deposit(100, null, false);
-        self::assertSame($transaction->wallet->getKey(), $userConfirm->wallet->getKey());
-        self::assertSame((int) $transaction->payable_id, (int) $userConfirm->getKey());
+        self::assertSame($transaction->wallet->id, $userConfirm->wallet->id);
+        self::assertSame((int) $transaction->payable_id, (int) $userConfirm->id);
         self::assertInstanceOf(UserConfirm::class, $transaction->payable);
         self::assertFalse($transaction->confirmed);
 
@@ -303,15 +303,8 @@ final class ConfirmTest extends TestCase
             self::assertTrue($user2->wallet->resetConfirm($transfer->deposit)); // confirm => false
         });
 
-        /** @var string $sum1 */
-        $sum1 = $user1->transactions()
-            ->sum('amount');
-        /** @var string $sum2 */
-        $sum2 = $user2->transactions()
-            ->sum('amount');
-
-        self::assertSame(500, (int) $sum1);
-        self::assertSame(500, (int) $sum2);
+        self::assertSame(500, (int) $user1->transactions()->sum('amount'));
+        self::assertSame(500, (int) $user2->transactions()->sum('amount'));
 
         self::assertSame(500, $user1->balanceInt);
         self::assertSame(0, $user2->balanceInt);

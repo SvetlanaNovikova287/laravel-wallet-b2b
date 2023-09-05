@@ -10,6 +10,7 @@ use Bavix\Wallet\Exceptions\InsufficientFunds;
 use Bavix\Wallet\External\Contracts\ExtraDtoInterface;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
 use Bavix\Wallet\Models\Transaction;
@@ -21,7 +22,7 @@ use Illuminate\Database\RecordsNotFoundException;
  * Trait HasWalletFloat.
  *
  * @property string $balanceFloat
- * @property float $balanceFloatNum
+ * @property float  $balanceFloatNum
  * @psalm-require-extends \Illuminate\Database\Eloquent\Model
  * @psalm-require-implements \Bavix\Wallet\Interfaces\WalletFloat
  */
@@ -31,6 +32,7 @@ trait HasWalletFloat
 
     /**
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -50,6 +52,7 @@ trait HasWalletFloat
 
     /**
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -68,6 +71,7 @@ trait HasWalletFloat
      * @throws AmountInvalid
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -96,6 +100,7 @@ trait HasWalletFloat
      * @throws AmountInvalid
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -128,6 +133,7 @@ trait HasWalletFloat
 
     /**
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface

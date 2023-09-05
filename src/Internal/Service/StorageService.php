@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Bavix\Wallet\Internal\Service;
 
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\RecordNotFoundException;
 use Illuminate\Contracts\Cache\Repository as CacheRepository;
 
@@ -13,9 +14,9 @@ final class StorageService implements StorageServiceInterface
     private const PREFIX = 'wallet_sg::';
 
     public function __construct(
-        private readonly MathServiceInterface $mathService,
-        private readonly CacheRepository $cacheRepository,
-        private readonly ?int $ttl
+        private MathServiceInterface $mathService,
+        private CacheRepository $cacheRepository,
+        private ?int $ttl
     ) {
     }
 
@@ -24,7 +25,7 @@ final class StorageService implements StorageServiceInterface
         return $this->cacheRepository->clear();
     }
 
-    public function forget(string $uuid): bool
+    public function missing(string $uuid): bool
     {
         return $this->cacheRepository->forget(self::PREFIX . $uuid);
     }
@@ -128,7 +129,9 @@ final class StorageService implements StorageServiceInterface
      * @param T $inputs
      *
      * @return non-empty-array<key-of<T>, string>
+     * @psalm-return non-empty-array<string, string>
      *
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      */
     public function multiIncrease(array $inputs): array

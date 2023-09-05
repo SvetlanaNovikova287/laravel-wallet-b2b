@@ -44,7 +44,7 @@ return new class() extends Migration {
         Schema::dropColumns($this->table(), ['uuid']);
     }
 
-    private function table(): string
+    protected function table(): string
     {
         return (new Wallet())->getTable();
     }

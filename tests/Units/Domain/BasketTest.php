@@ -6,7 +6,6 @@ namespace Bavix\Wallet\Test\Units\Domain;
 
 use Bavix\Wallet\Internal\Dto\BasketDto;
 use Bavix\Wallet\Internal\Dto\ItemDto;
-use Bavix\Wallet\Internal\Dto\ItemDtoInterface;
 use Bavix\Wallet\Test\Infra\Models\Item;
 use Bavix\Wallet\Test\Infra\TestCase;
 
@@ -18,8 +17,8 @@ final class BasketTest extends TestCase
     public function testCount(): void
     {
         $item = new Item();
-        $productDto1 = new ItemDto($item, 24, null, null);
-        $productDto2 = new ItemDto($item, 26, null, null);
+        $productDto1 = new ItemDto($item, 24, null);
+        $productDto2 = new ItemDto($item, 26, null);
         $basket = new BasketDto([$productDto1, $productDto2], []);
 
         self::assertEmpty($basket->meta());
@@ -36,13 +35,10 @@ final class BasketTest extends TestCase
 
     public function testMeta(): void
     {
-        /** @var non-empty-array<ItemDtoInterface> $items */
-        $items = [];
-
-        $basket1 = new BasketDto($items, []);
+        $basket1 = new BasketDto([], []);
         self::assertEmpty($basket1->meta());
 
-        $basket2 = new BasketDto($items, [
+        $basket2 = new BasketDto([], [
             'hello' => 'world',
         ]);
         self::assertSame([
@@ -52,10 +48,7 @@ final class BasketTest extends TestCase
 
     public function testEmpty(): void
     {
-        /** @var non-empty-array<ItemDtoInterface> $items */
-        $items = [];
-
-        $basket = new BasketDto($items, []);
+        $basket = new BasketDto([], []);
         self::assertEmpty($basket->items());
         self::assertEmpty($basket->meta());
         self::assertSame(0, $basket->count());

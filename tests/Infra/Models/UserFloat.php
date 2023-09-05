@@ -10,17 +10,17 @@ use Bavix\Wallet\Traits\HasWalletFloat;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * Class UserFloat.
+ *
  * @property string $name
  * @property string $email
- *
- * @method int getKey()
  */
-final class UserFloat extends Model implements Wallet, WalletFloat
+class UserFloat extends Model implements Wallet, WalletFloat
 {
     use HasWalletFloat;
 
     /**
-     * @var string[]
+     * @var array
      */
     protected $fillable = ['name', 'email'];
 

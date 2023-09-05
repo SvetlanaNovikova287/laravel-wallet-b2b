@@ -6,38 +6,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-## [10.0.0] - 2023-07-08
-
-### Added
-- Added environment variables for cache and locks (WALLET_CACHE_DRIVER, WALLET_CACHE_TTL, WALLET_LOCK_DRIVER, WALLET_LOCK_TTL).
-- Transaction/transfer uuids added to External API.
-- Improved support for custom types with phpstan. Now you will find more errors.
-- Added the ability to buy for any wallet through the basket (receiving wallet).
-
-### Deprecated
-- Method deprecated `BookkeeperServiceInterface::missing`. Use `BookkeeperServiceInterface::forget`.
-
-### Deleted
-- Removed `LockProviderNotFoundException`.
-
-### Fixed
-- Fixed empty state bug.
-- Fixed return types in phpdoc, added strong typing.
-
-### Changed
-- Viewing a balance no longer creates a wallet. Solves problems with laravel nova. #658. Thank you @myounis97
-- Contract changed `EagerLoaderServiceInterface`. Added customer.
-- The `to_type` and `from_type` columns in the translation table are no longer used. Will be removed in 11.x.
-- For all transfers, the relationship type has been changed from `MorphMany` to `HasMany`.
-- Minimum php version 8.1.
-- Minimum laravel version 10.0.
-- Minimum doctrine/dbal version 3.5.
-- Minimum brick/math version 0.10.
-
-## [9.6.2] - 2023-03-15
-### Fixed 
-- * Fixed WalletService::create() without db::transaction() 
-
 ## [9.6.1] - 2023-01-30
 ### Added
 * Add support laravel 10.x
@@ -1008,9 +976,7 @@ The operation is now executed in the transaction and updates the new `refund` fi
 - Exceptions: AmountInvalid, BalanceIsEmpty.
 - Models: Transfer, Transaction.
 
-[Unreleased]: https://github.com/bavix/laravel-wallet/compare/10.0.0...develop
-[10.0.0]: https://github.com/bavix/laravel-wallet/compare/9.6.2...10.0.0
-[9.6.2]: https://github.com/bavix/laravel-wallet/compare/9.6.1...9.6.2
+[Unreleased]: https://github.com/bavix/laravel-wallet/compare/9.6.1...10.x
 [9.6.1]: https://github.com/bavix/laravel-wallet/compare/9.6.0...9.6.1
 [9.6.0]: https://github.com/bavix/laravel-wallet/compare/9.5.0...9.6.0
 [9.5.0]: https://github.com/bavix/laravel-wallet/compare/9.4.0...9.5.0

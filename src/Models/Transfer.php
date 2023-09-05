@@ -4,26 +4,27 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Models;
 
+use function config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use function config;
+use Illuminate\Database\Eloquent\Relations\MorphTo;
 
 /**
  * Class Transfer.
  *
- * @property string $status
- * @property string $status_last
- * @property string $discount
- * @property int $deposit_id
- * @property int $withdraw_id
- * @property Wallet $from
- * @property class-string $from_type
- * @property int $from_id
- * @property Wallet $to
- * @property class-string $to_type
- * @property int $to_id
- * @property string $uuid
- * @property string $fee
+ * @property string      $status
+ * @property string      $status_last
+ * @property string      $discount
+ * @property int         $deposit_id
+ * @property int         $withdraw_id
+ * @property Wallet      $from
+ * @property string      $from_type
+ * @property int         $from_id
+ * @property Wallet      $to
+ * @property string      $to_type
+ * @property int         $to_id
+ * @property string      $uuid
+ * @property string      $fee
  * @property Transaction $deposit
  * @property Transaction $withdraw
  *
@@ -31,15 +32,15 @@ use function config;
  */
 class Transfer extends Model
 {
-    final public const STATUS_EXCHANGE = 'exchange';
+    public const STATUS_EXCHANGE = 'exchange';
 
-    final public const STATUS_TRANSFER = 'transfer';
+    public const STATUS_TRANSFER = 'transfer';
 
-    final public const STATUS_PAID = 'paid';
+    public const STATUS_PAID = 'paid';
 
-    final public const STATUS_REFUND = 'refund';
+    public const STATUS_REFUND = 'refund';
 
-    final public const STATUS_GIFT = 'gift';
+    public const STATUS_GIFT = 'gift';
 
     /**
      * @var string[]
@@ -76,33 +77,21 @@ class Transfer extends Model
         return parent::getTable();
     }
 
-    /**
-     * @return BelongsTo<Wallet, self>
-     */
-    public function from(): BelongsTo
+    public function from(): MorphTo
     {
-        return $this->belongsTo(Wallet::class, 'from_id');
+        return $this->morphTo();
     }
 
-    /**
-     * @return BelongsTo<Wallet, self>
-     */
-    public function to(): BelongsTo
+    public function to(): MorphTo
     {
-        return $this->belongsTo(Wallet::class, 'to_id');
+        return $this->morphTo();
     }
 
-    /**
-     * @return BelongsTo<Transaction, self>
-     */
     public function deposit(): BelongsTo
     {
         return $this->belongsTo(Transaction::class, 'deposit_id');
     }
 
-    /**
-     * @return BelongsTo<Transaction, self>
-     */
     public function withdraw(): BelongsTo
     {
         return $this->belongsTo(Transaction::class, 'withdraw_id');

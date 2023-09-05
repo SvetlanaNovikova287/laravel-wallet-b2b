@@ -8,34 +8,36 @@ use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
 use Bavix\Wallet\Models\Wallet as WalletModel;
 use Bavix\Wallet\Services\CastServiceInterface;
+use function config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
-use function config;
 
 /**
  * Class Transaction.
  *
- * @property class-string $payable_type
- * @property int|string $payable_id
- * @property int $wallet_id
- * @property string $uuid
- * @property string $type
- * @property string $amount
- * @property int $amountInt
- * @property string $amountFloat
- * @property bool $confirmed
- * @property array $meta
- * @property Wallet $payable
+ * @property string      $payable_type
+ * @property int|string  $payable_id
+ * @property int         $wallet_id
+ * @property string      $uuid
+ * @property string      $type
+ * @property string      $amount
+ * @property int         $amountInt
+ * @property string      $amountFloat
+ * @property bool        $confirmed
+ * @property array       $meta
+ * @property Wallet      $payable
  * @property WalletModel $wallet
  *
  * @method int getKey()
  */
 class Transaction extends Model
 {
-    final public const TYPE_DEPOSIT = 'deposit';
+    public const TYPE_DEPOSIT = 'deposit';
+    public const TYPE_DEPOSIT_ADMIN = 'deposit_admin';
+    public const TYPE_DEPOSIT_PRODUCT = 'deposit_product';
 
-    final public const TYPE_WITHDRAW = 'withdraw';
+    public const TYPE_WITHDRAW = 'withdraw';
 
     /**
      * @var string[]
@@ -71,17 +73,11 @@ class Transaction extends Model
         return parent::getTable();
     }
 
-    /**
-     * @return MorphTo<Model, self>
-     */
     public function payable(): MorphTo
     {
         return $this->morphTo();
     }
 
-    /**
-     * @return BelongsTo<WalletModel, self>
-     */
     public function wallet(): BelongsTo
     {
         return $this->belongsTo(config('wallet.wallet.model', WalletModel::class));

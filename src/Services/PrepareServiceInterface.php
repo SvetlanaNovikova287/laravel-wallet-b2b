@@ -9,11 +9,7 @@ use Bavix\Wallet\External\Contracts\ExtraDtoInterface;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Internal\Dto\TransactionDtoInterface;
 use Bavix\Wallet\Internal\Dto\TransferLazyDtoInterface;
-use Bavix\Wallet\Models\Wallet as WalletModel;
 
-/**
- * @api
- */
 interface PrepareServiceInterface
 {
     /**
@@ -25,8 +21,31 @@ interface PrepareServiceInterface
         Wallet $wallet,
         float|int|string $amount,
         ?array $meta,
-        bool $confirmed = true,
-        ?string $uuid = null
+        bool $confirmed = true
+    ): TransactionDtoInterface;
+
+    /**
+     * @param null|array<mixed> $meta
+     *
+     * @throws AmountInvalid
+     */
+    public function deposit_admin(
+        Wallet $wallet,
+        float|int|string $amount,
+        ?array $meta,
+        bool $confirmed = true
+    ): TransactionDtoInterface;
+
+    /**
+     * @param null|array<mixed> $meta
+     *
+     * @throws AmountInvalid
+     */
+    public function deposit_product(
+        Wallet $wallet,
+        float|int|string $amount,
+        ?array $meta,
+        bool $confirmed = true
     ): TransactionDtoInterface;
 
     /**
@@ -38,8 +57,7 @@ interface PrepareServiceInterface
         Wallet $wallet,
         float|int|string $amount,
         ?array $meta,
-        bool $confirmed = true,
-        ?string $uuid = null
+        bool $confirmed = true
     ): TransactionDtoInterface;
 
     /**
@@ -50,21 +68,6 @@ interface PrepareServiceInterface
     public function transferLazy(
         Wallet $from,
         Wallet $to,
-        string $status,
-        float|int|string $amount,
-        ExtraDtoInterface|array|null $meta = null
-    ): TransferLazyDtoInterface;
-
-    /**
-     * @param ExtraDtoInterface|array<mixed>|null $meta
-     *
-     * @throws AmountInvalid
-     */
-    public function transferExtraLazy(
-        Wallet $from,
-        WalletModel $fromWallet,
-        Wallet $to,
-        WalletModel $toWallet,
         string $status,
         float|int|string $amount,
         ExtraDtoInterface|array|null $meta = null

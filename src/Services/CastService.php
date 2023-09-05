@@ -18,9 +18,9 @@ use Illuminate\Database\Eloquent\Model;
 final class CastService implements CastServiceInterface
 {
     public function __construct(
-        private readonly WalletCreatedEventAssemblerInterface $walletCreatedEventAssembler,
-        private readonly DispatcherServiceInterface $dispatcherService,
-        private readonly DatabaseServiceInterface $databaseService
+        private WalletCreatedEventAssemblerInterface $walletCreatedEventAssembler,
+        private DispatcherServiceInterface $dispatcherService,
+        private DatabaseServiceInterface $databaseService
     ) {
     }
 

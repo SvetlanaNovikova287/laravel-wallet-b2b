@@ -12,7 +12,6 @@ use Bavix\Wallet\Internal\Service\LockServiceInterface;
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
 use Bavix\Wallet\Internal\Service\StorageServiceInterface;
 use Bavix\Wallet\Models\Wallet;
-use PHPUnit\Framework\Attributes\CodeCoverageIgnore;
 
 /**
  * @internal
@@ -30,27 +29,21 @@ final class RegulatorService implements RegulatorServiceInterface
     private array $multiIncrease = [];
 
     public function __construct(
-        private readonly BalanceUpdatedEventAssemblerInterface $balanceUpdatedEventAssembler,
-        private readonly BookkeeperServiceInterface $bookkeeperService,
-        private readonly DispatcherServiceInterface $dispatcherService,
-        private readonly StorageServiceInterface $storageService,
-        private readonly MathServiceInterface $mathService,
-        private readonly LockServiceInterface $lockService,
-        private readonly WalletRepositoryInterface $walletRepository
+        private BalanceUpdatedEventAssemblerInterface $balanceUpdatedEventAssembler,
+        private BookkeeperServiceInterface $bookkeeperService,
+        private DispatcherServiceInterface $dispatcherService,
+        private StorageServiceInterface $storageService,
+        private MathServiceInterface $mathService,
+        private LockServiceInterface $lockService,
+        private WalletRepositoryInterface $walletRepository
     ) {
     }
 
-    #[CodeCoverageIgnore]
     public function missing(Wallet $wallet): bool
-    {
-        return $this->forget($wallet);
-    }
-
-    public function forget(Wallet $wallet): bool
     {
         unset($this->wallets[$wallet->uuid]);
 
-        return $this->storageService->forget($wallet->uuid);
+        return $this->storageService->missing($wallet->uuid);
     }
 
     public function diff(Wallet $wallet): string
@@ -141,13 +134,25 @@ final class RegulatorService implements RegulatorServiceInterface
         }
     }
 
+    /**
+     * @codeCoverageIgnore
+     */
+    public function approve(): void
+    {
+        try {
+            $this->committing();
+        } finally {
+            $this->committed();
+        }
+    }
+
     public function purge(): void
     {
         try {
             $this->lockService->releases(array_keys($this->wallets));
             $this->multiIncrease = [];
             foreach ($this->wallets as $wallet) {
-                $this->forget($wallet);
+                $this->missing($wallet);
             }
         } finally {
             $this->dispatcherService->forgot();

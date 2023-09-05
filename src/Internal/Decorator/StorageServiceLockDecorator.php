@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Internal\Decorator;
 
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\RecordNotFoundException;
 use Bavix\Wallet\Internal\Service\LockServiceInterface;
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
@@ -13,10 +14,10 @@ use Bavix\Wallet\Internal\Service\StorageServiceInterface;
 final class StorageServiceLockDecorator implements StorageServiceInterface
 {
     public function __construct(
-        private readonly StorageServiceInterface $storageService,
-        private readonly StateServiceInterface $stateService,
-        private readonly LockServiceInterface $lockService,
-        private readonly MathServiceInterface $mathService
+        private StorageServiceInterface $storageService,
+        private StateServiceInterface $stateService,
+        private LockServiceInterface $lockService,
+        private MathServiceInterface $mathService
     ) {
     }
 
@@ -25,9 +26,9 @@ final class StorageServiceLockDecorator implements StorageServiceInterface
         return $this->storageService->flush();
     }
 
-    public function forget(string $uuid): bool
+    public function missing(string $uuid): bool
     {
-        return $this->storageService->forget($uuid);
+        return $this->storageService->missing($uuid);
     }
 
     public function get(string $uuid): string
@@ -43,6 +44,7 @@ final class StorageServiceLockDecorator implements StorageServiceInterface
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      */
     public function increase(string $uuid, float|int|string $value): string

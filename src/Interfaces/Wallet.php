@@ -9,6 +9,7 @@ use Bavix\Wallet\Exceptions\BalanceIsEmpty;
 use Bavix\Wallet\Exceptions\InsufficientFunds;
 use Bavix\Wallet\External\Contracts\ExtraDtoInterface;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
 use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Models\Transfer;
@@ -22,6 +23,7 @@ interface Wallet
      * @param array<mixed>|null $meta
      *
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -32,8 +34,32 @@ interface Wallet
      * @param array<mixed>|null $meta
      *
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
+     * @throws RecordsNotFoundException
+     * @throws TransactionFailedException
+     * @throws ExceptionInterface
+     */
+    public function deposit_admin(int|string $amount, ?array $meta = null, bool $confirmed = true): Transaction;
+
+    /**
+     * @param array<mixed>|null $meta
+     *
+     * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
+     * @throws RecordsNotFoundException
+     * @throws TransactionFailedException
+     * @throws ExceptionInterface
+     */
+    public function deposit_product(int|string $amount, ?array $meta = null, bool $confirmed = true): Transaction;
+
+
+    /**
+     * @param array<mixed>|null $meta
+     *
+     * @throws AmountInvalid
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -44,6 +70,7 @@ interface Wallet
      * @param array<mixed>|null $meta
      *
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -56,6 +83,7 @@ interface Wallet
      * @throws AmountInvalid
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -75,6 +103,7 @@ interface Wallet
      * @param ExtraDtoInterface|array<mixed>|null $meta
      *
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -91,18 +120,9 @@ interface Wallet
 
     public function getBalanceIntAttribute(): int;
 
-    /**
-     * @return HasMany<Transaction>
-     */
     public function walletTransactions(): HasMany;
 
-    /**
-     * @return MorphMany<Transaction>
-     */
     public function transactions(): MorphMany;
 
-    /**
-     * @return HasMany<Transfer>
-     */
-    public function transfers(): HasMany;
+    public function transfers(): MorphMany;
 }

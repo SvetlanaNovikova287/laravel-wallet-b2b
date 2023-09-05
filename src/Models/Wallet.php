@@ -4,11 +4,14 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Models;
 
+use function app;
+use function array_key_exists;
 use Bavix\Wallet\Interfaces\Confirmable;
 use Bavix\Wallet\Interfaces\Customer;
 use Bavix\Wallet\Interfaces\Exchangeable;
 use Bavix\Wallet\Interfaces\WalletFloat;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
 use Bavix\Wallet\Internal\Service\UuidFactoryServiceInterface;
@@ -18,31 +21,26 @@ use Bavix\Wallet\Traits\CanConfirm;
 use Bavix\Wallet\Traits\CanExchange;
 use Bavix\Wallet\Traits\CanPayFloat;
 use Bavix\Wallet\Traits\HasGift;
-use DateTimeInterface;
+use function config;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 use Illuminate\Database\RecordsNotFoundException;
 use Illuminate\Support\Str;
-use function app;
-use function array_key_exists;
-use function config;
 
 /**
  * Class Wallet.
  *
- * @property class-string $holder_type
- * @property int|string $holder_id
- * @property string $name
- * @property string $slug
- * @property string $uuid
- * @property string $description
- * @property null|array $meta
- * @property int $decimal_places
- * @property Model $holder
- * @property string $credit
- * @property string $currency
- * @property DateTimeInterface $created_at
- * @property DateTimeInterface $updated_at
+ * @property string                          $holder_type
+ * @property int|string                      $holder_id
+ * @property string                          $name
+ * @property string                          $slug
+ * @property string                          $uuid
+ * @property string                          $description
+ * @property null|array                      $meta
+ * @property int                             $decimal_places
+ * @property \Bavix\Wallet\Interfaces\Wallet $holder
+ * @property string                          $credit
+ * @property string                          $currency
  *
  * @method int getKey()
  */
@@ -110,6 +108,7 @@ class Wallet extends Model implements Customer, WalletFloat, Confirmable, Exchan
     /**
      * Under ideal conditions, you will never need a method. Needed to deal with out-of-sync.
      *
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -140,9 +139,6 @@ class Wallet extends Model implements Customer, WalletFloat, Confirmable, Exchan
         ;
     }
 
-    /**
-     * @return MorphTo<Model, self>
-     */
     public function holder(): MorphTo
     {
         return $this->morphTo();

@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace Bavix\Wallet\Internal\Query;
 
 /**
- * @immutable
+ * @psalm-immutable
  * @internal
  */
 final class TransferQuery implements TransferQueryInterface
@@ -14,7 +14,7 @@ final class TransferQuery implements TransferQueryInterface
      * @param non-empty-array<int|string, string> $uuids
      */
     public function __construct(
-        private readonly array $uuids
+        private array $uuids
     ) {
     }
 

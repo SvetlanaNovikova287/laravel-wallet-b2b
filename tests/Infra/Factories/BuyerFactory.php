@@ -7,20 +7,23 @@ namespace Bavix\Wallet\Test\Infra\Factories;
 use Bavix\Wallet\Test\Infra\Models\Buyer;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<Buyer>
- */
-final class BuyerFactory extends Factory
+class BuyerFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = Buyer::class;
 
+    /**
+     * Define the model's default state.
+     */
     public function definition(): array
     {
         return [
-            'name' => fake()
-                ->name,
-            'email' => fake()
-                ->unique()
+            'name' => $this->faker->name,
+            'email' => $this->faker->unique()
                 ->safeEmail,
         ];
     }

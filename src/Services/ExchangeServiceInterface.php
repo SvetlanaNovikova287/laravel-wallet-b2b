@@ -6,8 +6,6 @@ namespace Bavix\Wallet\Services;
 
 /**
  * Currency exchange contract between wallets.
- *
- * @api
  */
 interface ExchangeServiceInterface
 {

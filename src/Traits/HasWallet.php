@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Traits;
 
+use function app;
 use Bavix\Wallet\Exceptions\AmountInvalid;
 use Bavix\Wallet\Exceptions\BalanceIsEmpty;
 use Bavix\Wallet\Exceptions\InsufficientFunds;
 use Bavix\Wallet\External\Contracts\ExtraDtoInterface;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
 use Bavix\Wallet\Models\Transaction;
@@ -22,18 +24,18 @@ use Bavix\Wallet\Services\PrepareServiceInterface;
 use Bavix\Wallet\Services\RegulatorServiceInterface;
 use Bavix\Wallet\Services\TransactionServiceInterface;
 use Bavix\Wallet\Services\TransferServiceInterface;
+use function config;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Database\RecordsNotFoundException;
-use function app;
-use function config;
+use Illuminate\Support\Collection;
 
 /**
  * Trait HasWallet.
  *
- * @property WalletModel $wallet
- * @property string $balance
- * @property int $balanceInt
+ * @property Collection|WalletModel[] $wallets
+ * @property string                   $balance
+ * @property int                      $balanceInt
  * @psalm-require-extends \Illuminate\Database\Eloquent\Model
  * @psalm-require-implements \Bavix\Wallet\Interfaces\Wallet
  */
@@ -45,6 +47,7 @@ trait HasWallet
      * The input means in the system.
      *
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -58,13 +61,50 @@ trait HasWallet
         );
     }
 
+
+    /**
+     * The input means in the system.
+     *
+     * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
+     * @throws RecordsNotFoundException
+     * @throws TransactionFailedException
+     * @throws ExceptionInterface
+     */
+    public function deposit_admin(int|string $amount, ?array $meta = null, bool $confirmed = true): Transaction
+    {
+        return app(AtomicServiceInterface::class)->block(
+            $this,
+            fn () => app(TransactionServiceInterface::class)
+                ->makeOne($this, Transaction::TYPE_DEPOSIT_ADMIN, $amount, $meta, $confirmed)
+        );
+    }
+
+    /**
+     * The input means in the system.
+     *
+     * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
+     * @throws RecordsNotFoundException
+     * @throws TransactionFailedException
+     * @throws ExceptionInterface
+     */
+    public function deposit_product(int|string $amount, ?array $meta = null, bool $confirmed = true): Transaction
+    {
+        return app(AtomicServiceInterface::class)->block(
+            $this,
+            fn () => app(TransactionServiceInterface::class)
+                ->makeOne($this, Transaction::TYPE_DEPOSIT_PRODUCT, $amount, $meta, $confirmed)
+        );
+    }
+
     /**
      * Magic laravel framework method, makes it possible to call property balance.
      */
     public function getBalanceAttribute(): string
     {
         /** @var Wallet $this */
-        return app(RegulatorServiceInterface::class)->amount(app(CastServiceInterface::class)->getWallet($this, false));
+        return app(RegulatorServiceInterface::class)->amount(app(CastServiceInterface::class)->getWallet($this));
     }
 
     public function getBalanceIntAttribute(): int
@@ -74,8 +114,6 @@ trait HasWallet
 
     /**
      * We receive transactions of the selected wallet.
-     *
-     * @return HasMany<Transaction>
      */
     public function walletTransactions(): HasMany
     {
@@ -87,8 +125,6 @@ trait HasWallet
 
     /**
      * all user actions on wallets will be in this method.
-     *
-     * @return MorphMany<Transaction>
      */
     public function transactions(): MorphMany
     {
@@ -119,6 +155,7 @@ trait HasWallet
      * @throws AmountInvalid
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -139,6 +176,7 @@ trait HasWallet
      * @throws AmountInvalid
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -173,6 +211,7 @@ trait HasWallet
      * Forced to withdraw funds from system.
      *
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -194,6 +233,7 @@ trait HasWallet
      * on business logic.
      *
      * @throws AmountInvalid
+     * @throws LockProviderNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
      * @throws ExceptionInterface
@@ -216,15 +256,13 @@ trait HasWallet
 
     /**
      * the transfer table is used to confirm the payment this method receives all transfers.
-     *
-     * @return HasMany<Transfer>
      */
-    public function transfers(): HasMany
+    public function transfers(): MorphMany
     {
         /** @var Wallet $this */
         return app(CastServiceInterface::class)
             ->getWallet($this, false)
-            ->hasMany(config('wallet.transfer.model', Transfer::class), 'from_id')
+            ->morphMany(config('wallet.transfer.model', Transfer::class), 'from')
         ;
     }
 }

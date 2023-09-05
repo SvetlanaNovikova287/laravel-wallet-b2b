@@ -16,7 +16,6 @@ interface TransferDtoAssemblerInterface
         Model $fromModel,
         Model $toModel,
         int $discount,
-        string $fee,
-        ?string $uuid
+        string $fee
     ): TransferDtoInterface;
 }

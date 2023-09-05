@@ -11,6 +11,7 @@ use Bavix\Wallet\Interfaces\CartInterface;
 use Bavix\Wallet\Interfaces\ProductInterface;
 use Bavix\Wallet\Internal\Assembler\AvailabilityDtoAssemblerInterface;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\ModelNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\RecordNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
@@ -26,8 +27,8 @@ use Bavix\Wallet\Services\EagerLoaderServiceInterface;
 use Bavix\Wallet\Services\PrepareServiceInterface;
 use Bavix\Wallet\Services\PurchaseServiceInterface;
 use Bavix\Wallet\Services\TransferServiceInterface;
-use Illuminate\Database\RecordsNotFoundException;
 use function count;
+use Illuminate\Database\RecordsNotFoundException;
 
 /**
  * @psalm-require-extends \Illuminate\Database\Eloquent\Model
@@ -41,6 +42,7 @@ trait CartPay
      * @throws ProductEnded
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -54,7 +56,7 @@ trait CartPay
             $basketDto = $cart->getBasketDto();
             $basketService = app(BasketServiceInterface::class);
             $availabilityAssembler = app(AvailabilityDtoAssemblerInterface::class);
-            app(EagerLoaderServiceInterface::class)->loadWalletsByBasket($this, $basketDto);
+            app(EagerLoaderServiceInterface::class)->loadWalletsByBasket($basketDto);
             if (! $basketService->availability($availabilityAssembler->create($this, $basketDto, false))) {
                 throw new ProductEnded(
                     app(TranslatorServiceInterface::class)->get('wallet::errors.product_stock'),
@@ -65,21 +67,16 @@ trait CartPay
             app(ConsistencyServiceInterface::class)->checkPotential($this, 0, true);
 
             $transfers = [];
-            $castService = app(CastServiceInterface::class);
             $prepareService = app(PrepareServiceInterface::class);
             $assistantService = app(AssistantServiceInterface::class);
-            foreach ($basketDto->items() as $item) {
-                foreach ($item->getItems() as $product) {
-                    $transfers[] = $prepareService->transferExtraLazy(
-                        $this,
-                        $castService->getWallet($this),
-                        $product,
-                        $castService->getWallet($item->getReceiving() ?? $product),
-                        Transfer::STATUS_PAID,
-                        0,
-                        $assistantService->getMeta($basketDto, $product)
-                    );
-                }
+            foreach ($basketDto->cursor() as $product) {
+                $transfers[] = $prepareService->transferLazy(
+                    $this,
+                    $product,
+                    Transfer::STATUS_PAID,
+                    0,
+                    $assistantService->getMeta($basketDto, $product)
+                );
             }
 
             assert($transfers !== []);
@@ -104,6 +101,7 @@ trait CartPay
      * @throws ProductEnded
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -117,7 +115,7 @@ trait CartPay
             $basketDto = $cart->getBasketDto();
             $basketService = app(BasketServiceInterface::class);
             $availabilityAssembler = app(AvailabilityDtoAssemblerInterface::class);
-            app(EagerLoaderServiceInterface::class)->loadWalletsByBasket($this, $basketDto);
+            app(EagerLoaderServiceInterface::class)->loadWalletsByBasket($basketDto);
             if (! $basketService->availability($availabilityAssembler->create($this, $basketDto, $force))) {
                 throw new ProductEnded(
                     app(TranslatorServiceInterface::class)->get('wallet::errors.product_stock'),
@@ -139,11 +137,9 @@ trait CartPay
                         $pricePerItem = $prices[$productId];
                     }
 
-                    $transfers[] = $prepareService->transferExtraLazy(
+                    $transfers[] = $prepareService->transferLazy(
                         $this,
-                        $castService->getWallet($this),
                         $product,
-                        $castService->getWallet($item->getReceiving() ?? $product),
                         Transfer::STATUS_PAID,
                         $pricePerItem,
                         $assistantService->getMeta($basketDto, $product)
@@ -163,6 +159,7 @@ trait CartPay
 
     /**
      * @throws ProductEnded
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -187,6 +184,7 @@ trait CartPay
     /**
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -197,12 +195,11 @@ trait CartPay
     {
         return app(AtomicServiceInterface::class)->block($this, function () use ($cart, $force, $gifts) {
             $basketDto = $cart->getBasketDto();
-            app(EagerLoaderServiceInterface::class)->loadWalletsByBasket($this, $basketDto);
+            app(EagerLoaderServiceInterface::class)->loadWalletsByBasket($basketDto);
             $transfers = app(PurchaseServiceInterface::class)->already($this, $basketDto, $gifts);
             if (count($transfers) !== $basketDto->total()) {
                 throw new ModelNotFoundException(
                     "No query results for model [{$this->transfers()
-                        ->getModel()
                         ->getMorphClass()}]",
                     ExceptionInterface::MODEL_NOT_FOUND
                 );
@@ -212,24 +209,19 @@ trait CartPay
             $objects = [];
             $transferIds = [];
             $transfers = array_values($transfers);
-            $castService = app(CastServiceInterface::class);
             $prepareService = app(PrepareServiceInterface::class);
             $assistantService = app(AssistantServiceInterface::class);
-            foreach ($basketDto->items() as $itemDto) {
-                foreach ($itemDto->getItems() as $product) {
-                    $transferIds[] = $transfers[$index]->getKey();
-                    $objects[] = $prepareService->transferExtraLazy(
-                        $product,
-                        $castService->getWallet($itemDto->getReceiving() ?? $product),
-                        $transfers[$index]->withdraw->wallet,
-                        $transfers[$index]->withdraw->wallet,
-                        Transfer::STATUS_TRANSFER,
-                        $transfers[$index]->deposit->amount,
-                        $assistantService->getMeta($basketDto, $product)
-                    );
+            foreach ($basketDto->cursor() as $product) {
+                $transferIds[] = $transfers[$index]->getKey();
+                $objects[] = $prepareService->transferLazy(
+                    $product,
+                    $transfers[$index]->withdraw->wallet,
+                    Transfer::STATUS_TRANSFER,
+                    $transfers[$index]->deposit->amount,
+                    $assistantService->getMeta($basketDto, $product)
+                );
 
-                    ++$index;
-                }
+                ++$index;
             }
 
             if (! $force) {
@@ -249,6 +241,7 @@ trait CartPay
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -272,6 +265,7 @@ trait CartPay
     /**
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -284,6 +278,7 @@ trait CartPay
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException

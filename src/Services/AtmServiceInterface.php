@@ -9,9 +9,6 @@ use Bavix\Wallet\Internal\Dto\TransferDtoInterface;
 use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Models\Transfer;
 
-/**
- * @api
- */
 interface AtmServiceInterface
 {
     /**

@@ -6,15 +6,17 @@ namespace Bavix\Wallet\Test\Units\Service;
 
 use Bavix\Wallet\Internal\Service\MathServiceInterface;
 use Bavix\Wallet\Test\Infra\TestCase;
+use Brick\Math\BigInteger;
 use Brick\Math\Exception\NumberFormatException;
-use PHPUnit\Framework\Attributes\DataProvider;
 
 /**
  * @internal
  */
 final class MathTest extends TestCase
 {
-    #[DataProvider('invalidProvider')]
+    /**
+     * @dataProvider invalidProvider
+     */
     public function testAbsInvalid(string $value): void
     {
         $this->expectException(NumberFormatException::class);
@@ -40,9 +42,11 @@ final class MathTest extends TestCase
         self::assertSame(123.11, (float) $provider->abs(-123.11));
 
         // string
-        // brick/math 0.9+
-        self::assertSame(123, (int) $provider->abs('123.'));
-        self::assertSame(.11, (float) $provider->abs('.11'));
+        if (! method_exists(BigInteger::class, 'parse')) {
+            // brick/math 0.9+
+            self::assertSame(123, (int) $provider->abs('123.'));
+            self::assertSame(.11, (float) $provider->abs('.11'));
+        }
 
         self::assertSame(123.11, (float) $provider->abs('123.11'));
         self::assertSame(123.11, (float) $provider->abs('-123.11'));
@@ -336,10 +340,7 @@ final class MathTest extends TestCase
         );
     }
 
-    /**
-     * @return array<string[]>
-     */
-    public static function invalidProvider(): array
+    public function invalidProvider(): array
     {
         return [['.'], ['hello'], ['--121'], ['---121']];
     }

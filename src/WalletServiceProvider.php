@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet;
 
+use Bavix\Wallet\Commands\TransferFixCommand;
 use Bavix\Wallet\External\Api\TransactionQueryHandler;
 use Bavix\Wallet\External\Api\TransactionQueryHandlerInterface;
 use Bavix\Wallet\External\Api\TransferQueryHandler;
@@ -106,22 +107,23 @@ use Bavix\Wallet\Services\TransferService;
 use Bavix\Wallet\Services\TransferServiceInterface;
 use Bavix\Wallet\Services\WalletService;
 use Bavix\Wallet\Services\WalletServiceInterface;
+use function config;
+use function dirname;
+use function function_exists;
 use Illuminate\Contracts\Cache\Factory as CacheFactory;
-use Illuminate\Contracts\Support\DeferrableProvider;
 use Illuminate\Database\Events\TransactionBeginning;
 use Illuminate\Database\Events\TransactionCommitted;
 use Illuminate\Database\Events\TransactionCommitting;
 use Illuminate\Database\Events\TransactionRolledBack;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\ServiceProvider;
-use function config;
-use function dirname;
-use function function_exists;
 
-final class WalletServiceProvider extends ServiceProvider implements DeferrableProvider
+final class WalletServiceProvider extends ServiceProvider
 {
     /**
      * Bootstrap services.
+     *
+     * @codeCoverageIgnore
      */
     public function boot(): void
     {
@@ -132,13 +134,11 @@ final class WalletServiceProvider extends ServiceProvider implements DeferrableP
         Event::listen(TransactionCommitted::class, Internal\Listeners\TransactionCommittedListener::class);
         Event::listen(TransactionRolledBack::class, Internal\Listeners\TransactionRolledBackListener::class);
 
-        // @codeCoverageIgnoreStart
         if (! $this->app->runningInConsole()) {
             return;
         }
-        // @codeCoverageIgnoreEnd
 
-        if (WalletConfigure::isRunsMigrations()) {
+        if ($this->shouldMigrate()) {
             $this->loadMigrationsFrom([dirname(__DIR__) . '/database']);
         }
 
@@ -159,6 +159,7 @@ final class WalletServiceProvider extends ServiceProvider implements DeferrableP
     public function register(): void
     {
         $this->mergeConfigFrom(dirname(__DIR__) . '/config/config.php', 'wallet');
+        $this->commands([TransferFixCommand::class]);
 
         /**
          * @var array{
@@ -188,22 +189,6 @@ final class WalletServiceProvider extends ServiceProvider implements DeferrableP
     }
 
     /**
-     * @return class-string[]
-     */
-    public function provides(): array
-    {
-        return array_merge(
-            $this->internalProviders(),
-            $this->servicesProviders(),
-            $this->repositoriesProviders(),
-            $this->transformersProviders(),
-            $this->assemblersProviders(),
-            $this->eventsProviders(),
-            $this->bindObjectsProviders(),
-        );
-    }
-
-    /**
      * @param array<class-string|null> $configure
      */
     private function repositories(array $configure): void
@@ -219,6 +204,14 @@ final class WalletServiceProvider extends ServiceProvider implements DeferrableP
         );
 
         $this->app->singleton(WalletRepositoryInterface::class, $configure['wallet'] ?? WalletRepository::class);
+    }
+
+    /**
+     * Determine if we should register the migrations.
+     */
+    private function shouldMigrate(): bool
+    {
+        return WalletConfigure::isRunsMigrations();
     }
 
     /**
@@ -430,111 +423,5 @@ final class WalletServiceProvider extends ServiceProvider implements DeferrableP
         // api
         $this->app->bind(TransactionQueryHandlerInterface::class, TransactionQueryHandler::class);
         $this->app->bind(TransferQueryHandlerInterface::class, TransferQueryHandler::class);
-    }
-
-    /**
-     * @return class-string[]
-     */
-    private function internalProviders(): array
-    {
-        return [
-            ClockServiceInterface::class,
-            ConnectionServiceInterface::class,
-            DatabaseServiceInterface::class,
-            DispatcherServiceInterface::class,
-            JsonServiceInterface::class,
-            LockServiceInterface::class,
-            MathServiceInterface::class,
-            StateServiceInterface::class,
-            TranslatorServiceInterface::class,
-            UuidFactoryServiceInterface::class,
-        ];
-    }
-
-    /**
-     * @return class-string[]
-     */
-    private function servicesProviders(): array
-    {
-        return [
-            AssistantServiceInterface::class,
-            AtmServiceInterface::class,
-            AtomicServiceInterface::class,
-            BasketServiceInterface::class,
-            CastServiceInterface::class,
-            ConsistencyServiceInterface::class,
-            DiscountServiceInterface::class,
-            EagerLoaderServiceInterface::class,
-            ExchangeServiceInterface::class,
-            PrepareServiceInterface::class,
-            PurchaseServiceInterface::class,
-            TaxServiceInterface::class,
-            TransactionServiceInterface::class,
-            TransferServiceInterface::class,
-            WalletServiceInterface::class,
-
-            BookkeeperServiceInterface::class,
-            RegulatorServiceInterface::class,
-        ];
-    }
-
-    /**
-     * @return class-string[]
-     */
-    private function repositoriesProviders(): array
-    {
-        return [
-            TransactionRepositoryInterface::class,
-            TransferRepositoryInterface::class,
-            WalletRepositoryInterface::class,
-        ];
-    }
-
-    /**
-     * @return class-string[]
-     */
-    private function transformersProviders(): array
-    {
-        return [
-            AvailabilityDtoAssemblerInterface::class,
-            BalanceUpdatedEventAssemblerInterface::class,
-            ExtraDtoAssemblerInterface::class,
-            OptionDtoAssemblerInterface::class,
-            TransactionDtoAssemblerInterface::class,
-            TransferLazyDtoAssemblerInterface::class,
-            TransferDtoAssemblerInterface::class,
-            TransactionQueryAssemblerInterface::class,
-            TransferQueryAssemblerInterface::class,
-            WalletCreatedEventAssemblerInterface::class,
-            TransactionCreatedEventAssemblerInterface::class,
-        ];
-    }
-
-    /**
-     * @return class-string[]
-     */
-    private function assemblersProviders(): array
-    {
-        return [TransactionDtoTransformerInterface::class, TransferDtoTransformerInterface::class];
-    }
-
-    /**
-     * @return class-string[]
-     */
-    private function eventsProviders(): array
-    {
-        return [
-            BalanceUpdatedEventInterface::class,
-            WalletCreatedEventInterface::class,
-            TransactionCreatedEventInterface::class,
-        ];
-    }
-
-    /**
-     * @return class-string[]
-     */
-    private function bindObjectsProviders(): array
-    {
-        return [TransactionQueryHandlerInterface::class, TransferQueryHandlerInterface::class];
     }
 }

@@ -6,18 +6,9 @@ namespace Bavix\Wallet\Services;
 
 use Bavix\Wallet\Models\Wallet;
 
-/**
- * @api
- */
 interface RegulatorServiceInterface
 {
-    /**
-     * @deprecated Fixed naming.
-     * @see forget
-     */
     public function missing(Wallet $wallet): bool;
-
-    public function forget(Wallet $wallet): bool;
 
     public function diff(Wallet $wallet): string;
 
@@ -32,6 +23,14 @@ interface RegulatorServiceInterface
     public function committing(): void;
 
     public function committed(): void;
+
+    /**
+     * @deprecated
+     *
+     * @see committing
+     * @see committed
+     */
+    public function approve(): void;
 
     public function purge(): void;
 }

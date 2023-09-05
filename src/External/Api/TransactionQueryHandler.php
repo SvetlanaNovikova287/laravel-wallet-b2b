@@ -16,10 +16,10 @@ use Bavix\Wallet\Services\TransactionServiceInterface;
 final class TransactionQueryHandler implements TransactionQueryHandlerInterface
 {
     public function __construct(
-        private readonly TransactionServiceInterface $transactionService,
-        private readonly AssistantServiceInterface $assistantService,
-        private readonly PrepareServiceInterface $prepareService,
-        private readonly AtomicServiceInterface $atomicService
+        private TransactionServiceInterface $transactionService,
+        private AssistantServiceInterface $assistantService,
+        private PrepareServiceInterface $prepareService,
+        private AtomicServiceInterface $atomicService
     ) {
     }
 
@@ -36,14 +36,12 @@ final class TransactionQueryHandler implements TransactionQueryHandlerInterface
                     $query->getAmount(),
                     $query->getMeta(),
                     $query->isConfirmed(),
-                    $query->getUuid(),
                 ),
                 TransactionQuery::TYPE_WITHDRAW => $this->prepareService->withdraw(
                     $query->getWallet(),
                     $query->getAmount(),
                     $query->getMeta(),
                     $query->isConfirmed(),
-                    $query->getUuid(),
                 )
             },
             $objects

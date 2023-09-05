@@ -9,13 +9,14 @@ use Bavix\Wallet\Exceptions\InsufficientFunds;
 use Bavix\Wallet\Exceptions\ProductEnded;
 use Bavix\Wallet\Interfaces\ProductInterface;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\ModelNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\RecordNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\TransactionFailedException;
 use Bavix\Wallet\Models\Transfer;
 use Bavix\Wallet\Objects\Cart;
-use Illuminate\Database\RecordsNotFoundException;
 use function current;
+use Illuminate\Database\RecordsNotFoundException;
 
 /**
  * @psalm-require-extends \Illuminate\Database\Eloquent\Model
@@ -29,6 +30,7 @@ trait CanPay
      * @throws ProductEnded
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -48,6 +50,7 @@ trait CanPay
      * @throws ProductEnded
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -60,6 +63,7 @@ trait CanPay
 
     /**
      * @throws ProductEnded
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -78,6 +82,7 @@ trait CanPay
     /**
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -90,6 +95,7 @@ trait CanPay
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -109,6 +115,7 @@ trait CanPay
     /**
      * @throws BalanceIsEmpty
      * @throws InsufficientFunds
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException
@@ -121,6 +128,7 @@ trait CanPay
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      * @throws RecordsNotFoundException
      * @throws TransactionFailedException

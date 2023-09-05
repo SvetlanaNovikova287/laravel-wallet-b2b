@@ -35,13 +35,13 @@ final class MultiWalletGiftTest extends TestCase
         ]);
         self::assertNotNull($wallet);
         self::assertNotNull($first->wallet);
-        self::assertNotSame((int) $first->wallet->getKey(), (int) $wallet->getKey());
+        self::assertNotSame((int) $first->wallet->id, (int) $wallet->id);
 
         /** @var Item $item */
         $item = ItemFactory::new()->create();
         $transaction = $wallet->deposit($item->getAmountProduct($wallet));
         self::assertSame($transaction->amountInt, $wallet->balanceInt);
-        self::assertSame($item->getAmountProduct($wallet), $wallet->balanceInt);
+        self::assertSame((int) $item->getAmountProduct($wallet), $wallet->balanceInt);
         self::assertNotNull($transaction);
 
         $transfer = $wallet->gift($second, $item);
@@ -52,16 +52,13 @@ final class MultiWalletGiftTest extends TestCase
         self::assertSame($second->balanceInt, 2);
         self::assertSame($transfer->status, Transfer::STATUS_GIFT);
 
-        /** @var string $holderKey */
-        $holderKey = $transfer->withdraw->wallet->holder->getKey();
-
-        self::assertSame((int) $first->getKey(), (int) $holderKey);
+        self::assertSame((int) $transfer->withdraw->wallet->holder->id, (int) $first->id);
         self::assertInstanceOf(UserMulti::class, $transfer->withdraw->wallet->holder);
 
-        self::assertSame((int) $wallet->getKey(), (int) $transfer->withdraw->wallet->getKey());
+        self::assertSame((int) $wallet->id, (int) $transfer->withdraw->wallet->id);
         self::assertInstanceOf(Wallet::class, $transfer->withdraw->wallet);
 
-        self::assertSame((int) $second->getKey(), (int) $transfer->from->holder_id);
+        self::assertSame((int) $second->id, (int) $transfer->from->holder_id);
         self::assertInstanceOf(UserMulti::class, $transfer->from->holder);
 
         self::assertFalse((bool) $wallet->paid($item));

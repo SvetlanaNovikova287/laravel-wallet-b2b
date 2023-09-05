@@ -4,10 +4,8 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Services;
 
-use Bavix\Wallet\Interfaces\Customer;
 use Bavix\Wallet\Internal\Dto\BasketDtoInterface;
 use Bavix\Wallet\Internal\Repository\WalletRepositoryInterface;
-use Bavix\Wallet\Models\Wallet;
 
 /**
  * @internal
@@ -15,22 +13,17 @@ use Bavix\Wallet\Models\Wallet;
 final class EagerLoaderService implements EagerLoaderServiceInterface
 {
     public function __construct(
-        private readonly CastServiceInterface $castService,
-        private readonly WalletRepositoryInterface $walletRepository
+        private CastServiceInterface $castService,
+        private WalletRepositoryInterface $walletRepository
     ) {
     }
 
-    public function loadWalletsByBasket(Customer $customer, BasketDtoInterface $basketDto): void
+    public function loadWalletsByBasket(BasketDtoInterface $basketDto): void
     {
         $products = [];
         /** @var array<array-key, array<array-key, int|string>> $productGroupIds */
         $productGroupIds = [];
         foreach ($basketDto->items() as $index => $item) {
-            // If the wallet is installed, then there is no need for lazy loading
-            if ($item->getReceiving() instanceof \Bavix\Wallet\Interfaces\Wallet) {
-                continue;
-            }
-
             $model = $this->castService->getModel($item->getProduct());
             if (! $model->relationLoaded('wallet')) {
                 $products[$index] = $item->getProduct();
@@ -47,7 +40,7 @@ final class EagerLoaderService implements EagerLoaderServiceInterface
 
             foreach ($holderIds as $index => $holderId) {
                 $wallet = $wallets[$holderId] ?? null;
-                if ($wallet instanceof Wallet) {
+                if ($wallet !== null) {
                     $model = $this->castService->getModel($products[$index]);
                     $model->setRelation('wallet', $wallet);
                 }

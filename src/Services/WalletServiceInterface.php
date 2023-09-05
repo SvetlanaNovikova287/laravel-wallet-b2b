@@ -8,9 +8,6 @@ use Bavix\Wallet\Internal\Exceptions\ModelNotFoundException;
 use Bavix\Wallet\Models\Wallet;
 use Illuminate\Database\Eloquent\Model;
 
-/**
- * @api
- */
 interface WalletServiceInterface
 {
     /**

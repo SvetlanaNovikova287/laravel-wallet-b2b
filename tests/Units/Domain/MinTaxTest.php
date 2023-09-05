@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Test\Units\Domain;
 
+use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Test\Infra\Factories\BuyerFactory;
 use Bavix\Wallet\Test\Infra\Factories\ItemMaxTaxFactory;
 use Bavix\Wallet\Test\Infra\Factories\ItemMinTaxFactory;
@@ -19,19 +20,21 @@ final class MinTaxTest extends TestCase
 {
     public function testPayMinimalTax(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer      $buyer
+         * @var ItemMinTax $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var ItemMinTax $product */
         $product = ItemMinTaxFactory::new()->create([
             'quantity' => 1,
         ]);
 
         $fee = (int) ($product->getAmountProduct($buyer) * $product->getFeePercent() / 100);
         if ($fee < $product->getMinimalFee()) {
-            $fee = $product->getMinimalFee();
+            $fee = (int) $product->getMinimalFee();
         }
 
-        $balance = $product->getAmountProduct($buyer) + $fee;
+        $balance = (int) ($product->getAmountProduct($buyer) + $fee);
 
         self::assertSame(0, $buyer->balanceInt);
         $buyer->deposit($balance);
@@ -40,11 +43,15 @@ final class MinTaxTest extends TestCase
         $transfer = $buyer->pay($product);
         self::assertNotNull($transfer);
 
+        /**
+         * @var Transaction $withdraw
+         * @var Transaction $deposit
+         */
         $withdraw = $transfer->withdraw;
         $deposit = $transfer->deposit;
 
         self::assertSame($withdraw->amountInt, -$balance);
-        self::assertSame($deposit->amountInt, $product->getAmountProduct($buyer));
+        self::assertSame($deposit->amountInt, (int) $product->getAmountProduct($buyer));
         self::assertNotSame($deposit->amountInt, $withdraw->amountInt);
         self::assertSame((int) $transfer->fee, $fee);
 
@@ -58,9 +65,11 @@ final class MinTaxTest extends TestCase
 
     public function testPayMaximalTax(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer      $buyer
+         * @var ItemMaxTax $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var ItemMaxTax $product */
         $product = ItemMaxTaxFactory::new()->create([
             'quantity' => 1,
             'price' => 12000,
@@ -68,10 +77,10 @@ final class MinTaxTest extends TestCase
 
         $fee = (int) ($product->getAmountProduct($buyer) * $product->getFeePercent() / 100);
         if ($fee > $product->getMaximalFee()) {
-            $fee = $product->getMaximalFee();
+            $fee = (int) $product->getMaximalFee();
         }
 
-        $balance = $product->getAmountProduct($buyer) + $fee;
+        $balance = (int) ($product->getAmountProduct($buyer) + $fee);
 
         self::assertSame(0, $buyer->balanceInt);
         $buyer->deposit($balance);
@@ -80,11 +89,15 @@ final class MinTaxTest extends TestCase
         $transfer = $buyer->pay($product);
         self::assertNotNull($transfer);
 
+        /**
+         * @var Transaction $withdraw
+         * @var Transaction $deposit
+         */
         $withdraw = $transfer->withdraw;
         $deposit = $transfer->deposit;
 
         self::assertSame($withdraw->amountInt, -$balance);
-        self::assertSame($deposit->amountInt, $product->getAmountProduct($buyer));
+        self::assertSame($deposit->amountInt, (int) $product->getAmountProduct($buyer));
         self::assertNotSame($deposit->amountInt, $withdraw->amountInt);
         self::assertSame((int) $transfer->fee, $fee);
 

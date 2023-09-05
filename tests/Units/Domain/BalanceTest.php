@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Test\Units\Domain;
 
+use function app;
 use Bavix\Wallet\Models\Wallet;
 use Bavix\Wallet\Services\BookkeeperServiceInterface;
 use Bavix\Wallet\Services\RegulatorServiceInterface;
@@ -12,7 +13,6 @@ use Bavix\Wallet\Test\Infra\Models\Buyer;
 use Bavix\Wallet\Test\Infra\TestCase;
 use PDOException;
 use PHPUnit\Framework\MockObject\MockObject;
-use function app;
 
 /**
  * @internal
@@ -105,6 +105,9 @@ final class BalanceTest extends TestCase
         self::assertLessThan(0, $buyer->balanceInt);
     }
 
+    /**
+     * @throws
+     */
     public function testSimple(): void
     {
         /** @var Buyer $buyer */
@@ -115,8 +118,9 @@ final class BalanceTest extends TestCase
 
         self::assertFalse($wallet->exists);
         self::assertSame(0, $wallet->balanceInt);
+        self::assertTrue($wallet->exists);
 
-        $wallet->deposit(1000); // create wallet
+        $wallet->deposit(1000);
         self::assertSame(1000, $wallet->balanceInt);
 
         $regulator = app(RegulatorServiceInterface::class);
@@ -157,6 +161,9 @@ final class BalanceTest extends TestCase
         self::assertSame(1, $wallet->balanceInt);
     }
 
+    /**
+     * @throws
+     */
     public function testGetBalance(): void
     {
         /** @var Buyer $buyer */
@@ -166,11 +173,14 @@ final class BalanceTest extends TestCase
 
         self::assertFalse($wallet->exists);
         self::assertSame($wallet->balanceInt, 0);
-        self::assertFalse($wallet->exists);
+        self::assertTrue($wallet->exists);
 
         self::assertSame('0', app(BookkeeperServiceInterface::class)->amount($wallet));
     }
 
+    /**
+     * @throws
+     */
     public function testThrowUpdate(): void
     {
         $this->expectException(PDOException::class);
@@ -182,9 +192,9 @@ final class BalanceTest extends TestCase
 
         self::assertFalse($wallet->exists);
         self::assertSame(0, $wallet->balanceInt);
-        self::assertFalse($wallet->exists);
+        self::assertTrue($wallet->exists);
 
-        /** @var MockObject&Wallet $mockQuery */
+        /** @var MockObject|Wallet $mockQuery */
         $mockQuery = $this->createMock($wallet->newQuery()::class);
         $mockQuery->method('whereKey')
             ->willReturn($mockQuery)
@@ -193,8 +203,8 @@ final class BalanceTest extends TestCase
             ->willThrowException(new PDOException())
         ;
 
-        /** @var MockObject&Wallet $mockWallet */
-        $mockWallet = $this->createMock(Wallet::class);
+        /** @var MockObject|Wallet $mockWallet */
+        $mockWallet = $this->createMock($wallet::class);
         $mockWallet->method('getBalanceAttribute')
             ->willReturn('125')
         ;
@@ -202,11 +212,11 @@ final class BalanceTest extends TestCase
             ->willReturn($mockQuery)
         ;
         $mockWallet->method('getKey')
-            ->willReturn(1)
+            ->willReturn($wallet->getKey())
         ;
 
         $mockWallet->newQuery()
-            ->whereKey(1)
+            ->whereKey($wallet->getKey())
             ->update([
                 'balance' => 100,
             ])

@@ -7,18 +7,24 @@ namespace Bavix\Wallet\Test\Infra\Factories;
 use Bavix\Wallet\Test\Infra\Models\ItemDiscountTax;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
-/**
- * @extends Factory<ItemDiscountTax>
- */
-final class ItemDiscountTaxFactory extends Factory
+class ItemDiscountTaxFactory extends Factory
 {
+    /**
+     * The name of the factory's corresponding model.
+     *
+     * @var string
+     */
     protected $model = ItemDiscountTax::class;
 
+    /**
+     * Define the model's default state.
+     *
+     * @throws
+     */
     public function definition(): array
     {
         return [
-            'name' => fake()
-                ->domainName,
+            'name' => $this->faker->domainName,
             'price' => 250,
             'quantity' => 90,
         ];

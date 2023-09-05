@@ -11,12 +11,12 @@ use Bavix\Wallet\Traits\HasWallets;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * Class User.
+ *
  * @property string $name
  * @property string $email
- *
- * @method int getKey()
  */
-final class UserMulti extends Model implements Wallet, WalletFloat
+class UserMulti extends Model implements Wallet, WalletFloat
 {
     use HasWalletFloat;
     use HasWallets;

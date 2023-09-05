@@ -9,17 +9,17 @@ use Bavix\Wallet\Traits\HasWallet;
 use Illuminate\Database\Eloquent\Model;
 
 /**
+ * Class User.
+ *
  * @property string $name
  * @property string $email
- *
- * @method int getKey()
  */
-final class User extends Model implements Wallet
+class User extends Model implements Wallet
 {
     use HasWallet;
 
     /**
-     * @var string[]
+     * @var array
      */
     protected $fillable = ['name', 'email'];
 }

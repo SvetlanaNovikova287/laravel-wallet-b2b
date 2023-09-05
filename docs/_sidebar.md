@@ -35,7 +35,6 @@
 - Purchases
 
     - [Payment](payment)
-    - [Payment to a custom wallet](payment-custom-wallet)
     - [Payment Free](pay-free)
     - [Refund](refund)
     - [Gift](gift)

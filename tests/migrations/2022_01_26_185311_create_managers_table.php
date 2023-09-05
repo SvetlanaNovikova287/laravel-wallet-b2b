@@ -6,7 +6,8 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class() extends Migration {
+final class CreateManagersTable extends Migration
+{
     public function up(): void
     {
         Schema::create('managers', static function (Blueprint $table) {
@@ -23,4 +24,4 @@ return new class() extends Migration {
     {
         Schema::dropIfExists('managers');
     }
-};
+}

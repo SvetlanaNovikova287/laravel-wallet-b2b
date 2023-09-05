@@ -4,18 +4,18 @@ declare(strict_types=1);
 
 namespace Bavix\Wallet\Traits;
 
+use function array_key_exists;
 use Bavix\Wallet\Internal\Exceptions\ModelNotFoundException;
 use Bavix\Wallet\Models\Wallet as WalletModel;
 use Bavix\Wallet\Services\WalletServiceInterface;
+use function config;
 use Illuminate\Database\Eloquent\Relations\MorphMany;
 use Illuminate\Support\Collection;
-use function array_key_exists;
-use function config;
 
 /**
  * Trait HasWallets To use a trait, you must add HasWallet trait.
  *
- * @property Collection<WalletModel> $wallets
+ * @property Collection|WalletModel[] $wallets
  * @psalm-require-extends \Illuminate\Database\Eloquent\Model
  */
 trait HasWallets
@@ -60,9 +60,8 @@ trait HasWallets
     public function getWalletOrFail(string $slug): WalletModel
     {
         if ($this->_wallets === [] && $this->relationLoaded('wallets')) {
-            /** @var Collection<WalletModel> $wallets */
-            $wallets = $this->getRelation('wallets');
-            foreach ($wallets as $wallet) {
+            /** @var WalletModel $wallet */
+            foreach ($this->getRelation('wallets') as $wallet) {
                 $wallet->setRelation('holder', $this->withoutRelations());
                 $this->_wallets[$wallet->slug] = $wallet;
             }
@@ -80,23 +79,12 @@ trait HasWallets
 
     /**
      * method of obtaining all wallets.
-     *
-     * @return MorphMany<WalletModel>
      */
     public function wallets(): MorphMany
     {
         return $this->morphMany(config('wallet.wallet.model', WalletModel::class), 'holder');
     }
 
-    /**
-     * @param array{
-     *     name: string,
-     *     slug?: string,
-     *     description?: string,
-     *     meta?: array<mixed>|null,
-     *     decimal_places?: positive-int,
-     * } $data
-     */
     public function createWallet(array $data): WalletModel
     {
         $wallet = app(WalletServiceInterface::class)->create($this, $data);

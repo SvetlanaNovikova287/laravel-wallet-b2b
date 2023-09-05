@@ -13,7 +13,7 @@ use Throwable;
 final class DatabaseService implements DatabaseServiceInterface
 {
     public function __construct(
-        private readonly ConnectionServiceInterface $connectionService
+        private ConnectionServiceInterface $connectionService
     ) {
     }
 

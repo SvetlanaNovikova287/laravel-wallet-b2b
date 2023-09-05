@@ -10,12 +10,12 @@ use Illuminate\Database\Eloquent\Model;
 use Laravel\Cashier\Billable;
 
 /**
+ * Class User.
+ *
  * @property string $name
  * @property string $email
- *
- * @method int getKey()
  */
-final class UserCashier extends Model
+class UserCashier extends Model
 {
     use Billable;
     use HasWallets;

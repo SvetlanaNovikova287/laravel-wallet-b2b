@@ -17,19 +17,15 @@ use Bavix\Wallet\Services\PurchaseServiceInterface;
 use Bavix\Wallet\Test\Infra\Exceptions\UnknownEventException;
 use Bavix\Wallet\Test\Infra\Factories\BuyerFactory;
 use Bavix\Wallet\Test\Infra\Factories\ItemFactory;
-use Bavix\Wallet\Test\Infra\Factories\UserMultiFactory;
 use Bavix\Wallet\Test\Infra\Listeners\BalanceUpdatedThrowDateListener;
 use Bavix\Wallet\Test\Infra\Listeners\BalanceUpdatedThrowIdListener;
 use Bavix\Wallet\Test\Infra\Listeners\BalanceUpdatedThrowUuidListener;
 use Bavix\Wallet\Test\Infra\Listeners\TransactionCreatedThrowListener;
 use Bavix\Wallet\Test\Infra\Listeners\WalletCreatedThrowListener;
 use Bavix\Wallet\Test\Infra\Models\Buyer;
-use Bavix\Wallet\Test\Infra\Models\Item;
-use Bavix\Wallet\Test\Infra\Models\UserMulti;
 use Bavix\Wallet\Test\Infra\Services\ClockFakeService;
 use Bavix\Wallet\Test\Infra\TestCase;
 use DateTimeInterface;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Event;
 
 /**
@@ -44,12 +40,11 @@ final class EventTest extends TestCase
         /** @var Buyer $buyer */
         $buyer = BuyerFactory::new()->create();
         self::assertSame(0, $buyer->wallet->balanceInt);
-        self::assertTrue($buyer->wallet->saveQuietly()); // create without event
 
         // unit
         $this->expectException(UnknownEventException::class);
         $this->expectExceptionMessage($buyer->wallet->uuid);
-        $this->expectExceptionCode(123 + $buyer->wallet->getKey());
+        $this->expectExceptionCode(123);
 
         $buyer->deposit(123);
     }
@@ -60,11 +55,11 @@ final class EventTest extends TestCase
 
         /** @var Buyer $buyer */
         $buyer = BuyerFactory::new()->create();
-        self::assertSame(0, $buyer->wallet->balanceInt); // no create wallet
+        self::assertSame(0, $buyer->wallet->balanceInt); // auto create wallet
 
         // unit
         $this->expectException(UnknownEventException::class);
-        $this->expectExceptionMessage($buyer->wallet->uuid);
+        $this->expectExceptionMessage((string) $buyer->wallet->getKey());
         $this->expectExceptionCode(456);
 
         $buyer->deposit(456);
@@ -72,7 +67,7 @@ final class EventTest extends TestCase
 
     public function testBalanceUpdatedThrowDateListener(): void
     {
-        $this->app?->bind(ClockServiceInterface::class, ClockFakeService::class);
+        $this->app->bind(ClockServiceInterface::class, ClockFakeService::class);
 
         Event::listen(BalanceUpdatedEventInterface::class, BalanceUpdatedThrowDateListener::class);
 
@@ -89,7 +84,7 @@ final class EventTest extends TestCase
 
     public function testWalletCreatedThrowListener(): void
     {
-        $this->app?->bind(ClockServiceInterface::class, ClockFakeService::class);
+        $this->app->bind(ClockServiceInterface::class, ClockFakeService::class);
 
         Event::listen(WalletCreatedEventInterface::class, WalletCreatedThrowListener::class);
 
@@ -109,34 +104,7 @@ final class EventTest extends TestCase
         $this->expectException(UnknownEventException::class);
         $this->expectExceptionMessage($message);
 
-        $buyer->withdraw(0);
-    }
-
-    public function testMultiWalletCreatedThrowListener(): void
-    {
-        $this->app?->bind(ClockServiceInterface::class, ClockFakeService::class);
-
-        Event::listen(WalletCreatedEventInterface::class, WalletCreatedThrowListener::class);
-
-        /** @var UserMulti $user */
-        $user = UserMultiFactory::new()->create();
-
-        $uuidFactoryService = app(UuidFactoryServiceInterface::class);
-        $uuid = $uuidFactoryService->uuid4();
-
-        $holderType = $user->getMorphClass();
-        $createdAt = app(ClockServiceInterface::class)->now()->format(DateTimeInterface::ATOM);
-
-        $message = hash('sha256', $holderType . $uuid . $createdAt);
-
-        // unit
-        $this->expectException(UnknownEventException::class);
-        $this->expectExceptionMessage($message);
-
-        $user->createWallet([
-            'uuid' => $uuid,
-            'name' => 'test',
-        ]);
+        $buyer->getBalanceIntAttribute();
     }
 
     /**
@@ -175,7 +143,7 @@ final class EventTest extends TestCase
      */
     public function testTransactionCreatedThrowListener(): void
     {
-        $this->app?->bind(ClockServiceInterface::class, ClockFakeService::class);
+        $this->app->bind(ClockServiceInterface::class, ClockFakeService::class);
 
         Event::listen(TransactionCreatedEventInterface::class, TransactionCreatedThrowListener::class);
 
@@ -188,7 +156,7 @@ final class EventTest extends TestCase
             ->format(DateTimeInterface::ATOM)
         ;
 
-        $message = hash('sha256', Transaction::TYPE_DEPOSIT . $createdAt);
+        $message = hash('sha256', Transaction::TYPE_DEPOSIT . $buyer->wallet->getKey() . $createdAt);
 
         // unit
         $this->expectException(UnknownEventException::class);
@@ -203,8 +171,8 @@ final class EventTest extends TestCase
     public function testTransactionCreatedMultiListener(): void
     {
         /** @var array<array<int, int>> $transactionIds */
-        $transactionIds = [];
         /** @var array<array<int, int>> $transactionCounts */
+        $transactionIds = [];
         $transactionCounts = [];
         Event::listen(
             TransactionCreatedEventInterface::class,
@@ -221,7 +189,6 @@ final class EventTest extends TestCase
         $buyer = BuyerFactory::new()->create();
         self::assertSame(0, $buyer->wallet->balanceInt);
 
-        /** @var Collection<int, Item> $products */
         $products = ItemFactory::times(10)->create([
             'quantity' => 1,
         ]);

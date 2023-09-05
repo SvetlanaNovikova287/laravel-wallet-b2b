@@ -87,19 +87,19 @@ final class WalletTest extends TestCase
         /** @var User $user */
         $user = $users->first();
         self::assertSame(0, $user->balanceInt); // create default wallet
-        self::assertFalse($user->wallet->exists);
+        self::assertTrue($user->wallet->exists);
 
         $ids = [];
         foreach ($users as $other) {
-            $ids[] = $other->getKey();
+            $ids[] = $other->id;
             if ($user !== $other) {
                 self::assertFalse($other->wallet->exists);
             }
         }
 
-        self::assertCount(0, User::query()->has('wallet')->whereIn('id', $ids)->get());
+        self::assertCount(1, User::query()->has('wallet')->whereIn('id', $ids)->get());
 
-        self::assertCount(10, User::query()->has('wallet', '<')->whereIn('id', $ids)->get());
+        self::assertCount(9, User::query()->has('wallet', '<')->whereIn('id', $ids)->get());
     }
 
     public function testWithdraw(): void
@@ -157,7 +157,7 @@ final class WalletTest extends TestCase
          * @var User $second
          */
         [$first, $second] = UserFactory::times(2)->create();
-        self::assertNotSame($first->getKey(), $second->getKey());
+        self::assertNotSame($first->id, $second->id);
         self::assertSame(0, $first->balanceInt);
         self::assertSame(0, $second->balanceInt);
 
@@ -288,7 +288,7 @@ final class WalletTest extends TestCase
         self::assertSame(10000, $user->balanceInt);
 
         try {
-            app(DatabaseServiceInterface::class)->transaction(static function () use ($user): never {
+            app(DatabaseServiceInterface::class)->transaction(static function () use ($user) {
                 self::assertSame(0, (int) app(RegulatorServiceInterface::class)->diff($user->wallet));
                 $user->withdraw(10000);
                 self::assertSame(-10000, (int) app(RegulatorServiceInterface::class)->diff($user->wallet));

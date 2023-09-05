@@ -6,7 +6,7 @@ namespace Bavix\Wallet\Test\Units\Domain;
 
 use Bavix\Wallet\Exceptions\InsufficientFunds;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
-use Bavix\Wallet\Internal\Service\MathServiceInterface;
+use Bavix\Wallet\Models\Transaction;
 use Bavix\Wallet\Test\Infra\Factories\BuyerFactory;
 use Bavix\Wallet\Test\Infra\Factories\ItemTaxFactory;
 use Bavix\Wallet\Test\Infra\Models\Buyer;
@@ -20,17 +20,17 @@ final class TaxTest extends TestCase
 {
     public function testPay(): void
     {
-        /** @var Buyer $buyer */
+        /**
+         * @var Buyer   $buyer
+         * @var ItemTax $product
+         */
         $buyer = BuyerFactory::new()->create();
-        /** @var ItemTax $product */
         $product = ItemTaxFactory::new()->create([
             'quantity' => 1,
         ]);
 
-        $math = app(MathServiceInterface::class);
-
-        $fee = (int) $math->div($math->mul($product->getAmountProduct($buyer), $product->getFeePercent()), 100);
-        $balance = (int) $math->add($product->getAmountProduct($buyer), $fee);
+        $fee = (int) ($product->getAmountProduct($buyer) * $product->getFeePercent() / 100);
+        $balance = (int) ($product->getAmountProduct($buyer) + $fee);
 
         self::assertSame(0, $buyer->balanceInt);
         $buyer->deposit($balance);
@@ -39,11 +39,15 @@ final class TaxTest extends TestCase
         $transfer = $buyer->pay($product);
         self::assertNotNull($transfer);
 
+        /**
+         * @var Transaction $withdraw
+         * @var Transaction $deposit
+         */
         $withdraw = $transfer->withdraw;
         $deposit = $transfer->deposit;
 
         self::assertSame($withdraw->amountInt, -$balance);
-        self::assertSame($deposit->amountInt, $product->getAmountProduct($buyer));
+        self::assertSame($deposit->amountInt, (int) $product->getAmountProduct($buyer));
         self::assertNotSame($deposit->amountInt, $withdraw->amountInt);
         self::assertSame((int) $transfer->fee, $fee);
 
@@ -58,19 +62,17 @@ final class TaxTest extends TestCase
     public function testGift(): void
     {
         /**
-         * @var Buyer $santa
-         * @var Buyer $child
+         * @var Buyer   $santa
+         * @var Buyer   $child
+         * @var ItemTax $product
          */
         [$santa, $child] = BuyerFactory::times(2)->create();
-        /** @var ItemTax $product */
         $product = ItemTaxFactory::new()->create([
             'quantity' => 1,
         ]);
 
-        $math = app(MathServiceInterface::class);
-
-        $fee = (int) $math->div($math->mul($product->getAmountProduct($santa), $product->getFeePercent()), 100);
-        $balance = (int) $math->add($product->getAmountProduct($santa), $fee);
+        $fee = (int) ($product->getAmountProduct($santa) * $product->getFeePercent() / 100);
+        $balance = (int) ($product->getAmountProduct($santa) + $fee);
 
         self::assertSame($santa->balanceInt, 0);
         self::assertSame($child->balanceInt, 0);
@@ -81,11 +83,15 @@ final class TaxTest extends TestCase
         $transfer = $santa->wallet->gift($child, $product);
         self::assertNotNull($transfer);
 
+        /**
+         * @var Transaction $withdraw
+         * @var Transaction $deposit
+         */
         $withdraw = $transfer->withdraw;
         $deposit = $transfer->deposit;
 
         self::assertSame($withdraw->amountInt, -$balance);
-        self::assertSame($deposit->amountInt, $product->getAmountProduct($santa));
+        self::assertSame($deposit->amountInt, (int) $product->getAmountProduct($santa));
         self::assertNotSame($deposit->amountInt, $withdraw->amountInt);
         self::assertSame($fee, (int) $transfer->fee);
 
@@ -106,11 +112,11 @@ final class TaxTest extends TestCase
         $this->expectExceptionMessageStrict(trans('wallet::errors.insufficient_funds'));
 
         /**
-         * @var Buyer $santa
-         * @var Buyer $child
+         * @var Buyer   $santa
+         * @var Buyer   $child
+         * @var ItemTax $product
          */
         [$santa, $child] = BuyerFactory::times(2)->create();
-        /** @var ItemTax $product */
         $product = ItemTaxFactory::new()->create([
             'price' => 200,
             'quantity' => 1,

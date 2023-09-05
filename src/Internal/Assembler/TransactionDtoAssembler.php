@@ -12,7 +12,7 @@ use Illuminate\Database\Eloquent\Model;
 final class TransactionDtoAssembler implements TransactionDtoAssemblerInterface
 {
     public function __construct(
-        private readonly UuidFactoryServiceInterface $uuidService
+        private UuidFactoryServiceInterface $uuidService
     ) {
     }
 
@@ -22,11 +22,10 @@ final class TransactionDtoAssembler implements TransactionDtoAssemblerInterface
         string $type,
         float|int|string $amount,
         bool $confirmed,
-        ?array $meta,
-        ?string $uuid
+        ?array $meta
     ): TransactionDtoInterface {
         return new TransactionDto(
-            $uuid ?? $this->uuidService->uuid4(),
+            $this->uuidService->uuid4(),
             $payable->getMorphClass(),
             $payable->getKey(),
             $walletId,

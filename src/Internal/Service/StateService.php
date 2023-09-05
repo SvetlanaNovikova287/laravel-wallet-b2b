@@ -9,7 +9,7 @@ use Illuminate\Contracts\Cache\Repository as CacheRepository;
 
 final class StateService implements StateServiceInterface
 {
-    private const RANDOM_BYTES = 3;
+    private const RANDOM_BYTES = 4;
 
     /**
      * Keeps the state of balance
@@ -31,7 +31,7 @@ final class StateService implements StateServiceInterface
      */
     private const PREFIX_HASHMAP = 'wallet_hm::';
 
-    private readonly CacheRepository $store;
+    private CacheRepository $store;
 
     public function __construct(CacheFactory $cacheFactory)
     {
@@ -52,7 +52,6 @@ final class StateService implements StateServiceInterface
         ];
 
         foreach ($uuids as $uuid) {
-            $values[self::PREFIX_STATE . $uuid] = null;
             $values[self::PREFIX_FORK_ID . $uuid] = $forkId;
         }
 
@@ -77,20 +76,17 @@ final class StateService implements StateServiceInterface
             return null;
         }
 
-        $insertValues = [];
         $results = $callable();
-        foreach ($results as $rUuid => $rValue) {
-            $insertValues[self::PREFIX_STATE . $rUuid] = $rValue;
+        $insertValues = [];
+        foreach ($results as $id => $value) {
+            $insertValues[self::PREFIX_STATE . $id] = $value;
         }
-
-        // set new values
-        $this->store->setMultiple($insertValues);
 
         /** @var array<string> $uuids */
         $uuids = $this->store->pull(self::PREFIX_HASHMAP . $forkId, []);
         $deleteKeys = array_map(static fn (string $uuid) => self::PREFIX_FORK_ID . $uuid, $uuids);
 
-        // delete callables by uuids
+        $this->store->setMultiple($insertValues);
         $this->store->deleteMultiple($deleteKeys);
 
         return $results[$uuid] ?? null;

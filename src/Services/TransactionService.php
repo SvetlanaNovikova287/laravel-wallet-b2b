@@ -7,6 +7,7 @@ namespace Bavix\Wallet\Services;
 use Bavix\Wallet\Interfaces\Wallet;
 use Bavix\Wallet\Internal\Assembler\TransactionCreatedEventAssemblerInterface;
 use Bavix\Wallet\Internal\Dto\TransactionDtoInterface;
+use Bavix\Wallet\Internal\Exceptions\LockProviderNotFoundException;
 use Bavix\Wallet\Internal\Exceptions\RecordNotFoundException;
 use Bavix\Wallet\Internal\Service\DispatcherServiceInterface;
 use Bavix\Wallet\Models\Transaction;
@@ -17,17 +18,18 @@ use Bavix\Wallet\Models\Transaction;
 final class TransactionService implements TransactionServiceInterface
 {
     public function __construct(
-        private readonly TransactionCreatedEventAssemblerInterface $transactionCreatedEventAssembler,
-        private readonly DispatcherServiceInterface $dispatcherService,
-        private readonly AssistantServiceInterface $assistantService,
-        private readonly RegulatorServiceInterface $regulatorService,
-        private readonly PrepareServiceInterface $prepareService,
-        private readonly CastServiceInterface $castService,
-        private readonly AtmServiceInterface $atmService,
+        private TransactionCreatedEventAssemblerInterface $transactionCreatedEventAssembler,
+        private DispatcherServiceInterface $dispatcherService,
+        private AssistantServiceInterface $assistantService,
+        private RegulatorServiceInterface $regulatorService,
+        private PrepareServiceInterface $prepareService,
+        private CastServiceInterface $castService,
+        private AtmServiceInterface $atmService,
     ) {
     }
 
     /**
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      */
     public function makeOne(
@@ -37,11 +39,14 @@ final class TransactionService implements TransactionServiceInterface
         ?array $meta,
         bool $confirmed = true
     ): Transaction {
-        assert(in_array($type, [Transaction::TYPE_DEPOSIT, Transaction::TYPE_WITHDRAW], true));
+        assert(in_array($type, [Transaction::TYPE_DEPOSIT, Transaction::TYPE_WITHDRAW, Transaction::TYPE_DEPOSIT_ADMIN], true));
 
-        $dto = $type === Transaction::TYPE_DEPOSIT
-            ? $this->prepareService->deposit($wallet, (string) $amount, $meta, $confirmed)
-            : $this->prepareService->withdraw($wallet, (string) $amount, $meta, $confirmed);
+        switch ($type) {
+            case Transaction::TYPE_DEPOSIT: $dto = $this->prepareService->deposit($wallet, (string) $amount, $meta, $confirmed);
+            case Transaction::TYPE_WITHDRAW: $dto = $this->prepareService->withdraw($wallet, (string) $amount, $meta, $confirmed);
+            case Transaction::TYPE_DEPOSIT_ADMIN: $dto = $this->prepareService->deposit_admin($wallet, (string) $amount, $meta, $confirmed);
+            case Transaction::TYPE_DEPOSIT_PRODUCT: $dto = $this->prepareService->deposit_product($wallet, (string) $amount, $meta, $confirmed);
+        }
 
         $transactions = $this->apply([
             $dto->getWalletId() => $wallet,
@@ -54,6 +59,7 @@ final class TransactionService implements TransactionServiceInterface
      * @param non-empty-array<int, Wallet> $wallets
      * @param non-empty-array<int, TransactionDtoInterface> $objects
      *
+     * @throws LockProviderNotFoundException
      * @throws RecordNotFoundException
      *
      * @return non-empty-array<string, Transaction>
@@ -66,7 +72,7 @@ final class TransactionService implements TransactionServiceInterface
 
         foreach ($totals as $walletId => $total) {
             $wallet = $wallets[$walletId] ?? null;
-            assert($wallet instanceof Wallet);
+            assert($wallet !== null);
 
             $object = $this->castService->getWallet($wallet);
             assert($object->getKey() === $walletId);

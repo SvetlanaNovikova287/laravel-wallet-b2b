@@ -7,9 +7,6 @@ namespace Bavix\Wallet\External\Api;
 use Bavix\Wallet\Internal\Exceptions\ExceptionInterface;
 use Bavix\Wallet\Models\Transaction;
 
-/**
- * @api
- */
 interface TransactionQueryHandlerInterface
 {
     /**
